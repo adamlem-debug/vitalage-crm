@@ -43,76 +43,63 @@
         :description="__('Add one to get started.')"
         width="lg"
       />
-      <List
-        v-else
-        class="workflow-automation-list"
-        :columns="listColumns"
-        :row-height="56"
-        divider="full"
-      >
-        <ListHeader class="sticky top-0 z-10 mx-3 bg-surface-elevation-2">
-          <ListHeaderCell>{{ __('Name') }}</ListHeaderCell>
-          <ListHeaderCell>{{ __('Document Type') }}</ListHeaderCell>
-          <ListHeaderCell>{{ __('Status') }}</ListHeaderCell>
-          <ListHeaderCell>{{ __('Enabled') }}</ListHeaderCell>
-          <ListHeaderCell>{{ __('Created By') }}</ListHeaderCell>
-        </ListHeader>
-        <ListRows
-          v-slot="{ item: row }"
-          :items="filteredAutomations"
-          row-key="name"
+      <div v-else class="overflow-hidden rounded border border-outline-gray-2">
+        <div
+          class="grid grid-cols-[minmax(0,4fr)_minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.5fr)] items-center border-b border-outline-gray-2 bg-surface-gray-2 px-3 py-2 text-sm-medium text-ink-gray-5"
         >
-          <ListRow :value="row.name" @click="openAutomation(row)">
-            <ListCell>
-              <span class="truncate text-base-medium text-ink-gray-7">
-                {{ row.title || row.name }}
-              </span>
-            </ListCell>
-            <ListCell>
-              <span class="truncate text-sm">
-                {{ row.document_type || __('Any document') }}
-              </span>
-            </ListCell>
-
-            <ListCell>
-              <Badge
-                :label="row.enabled ? __('Enabled') : __('Draft')"
-                :theme="row.enabled ? 'green' : 'orange'"
-                variant="outline"
+          <span>{{ __('Name') }}</span>
+          <span>{{ __('Document Type') }}</span>
+          <span>{{ __('Status') }}</span>
+          <span>{{ __('Enabled') }}</span>
+          <span>{{ __('Created By') }}</span>
+        </div>
+        <button
+          v-for="row in filteredAutomations"
+          :key="row.name"
+          type="button"
+          class="grid min-h-14 w-full grid-cols-[minmax(0,4fr)_minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.5fr)] items-center border-b border-outline-gray-2 px-3 text-left last:border-b-0 hover:bg-surface-gray-1"
+          @click="openAutomation(row)"
+        >
+          <span class="truncate text-base-medium text-ink-gray-7">
+            {{ row.title || row.name }}
+          </span>
+          <span class="truncate text-sm">
+            {{ row.document_type || __('Any document') }}
+          </span>
+          <span>
+            <Badge
+              :label="row.enabled ? __('Enabled') : __('Draft')"
+              :theme="row.enabled ? 'green' : 'orange'"
+              variant="outline"
+            />
+          </span>
+          <span @click.stop>
+            <Switch
+              size="sm"
+              :model-value="Boolean(row.enabled)"
+              :disabled="toggling.has(row.name)"
+              :aria-label="__('Enabled')"
+              @update:model-value="toggleAutomation(row, $event)"
+            />
+          </span>
+          <span
+            class="flex w-full items-center justify-between pr-1"
+            @click.stop
+          >
+            <Tooltip :text="getUser(row.owner).full_name">
+              <UserAvatar :user="row.owner" size="sm" />
+            </Tooltip>
+            <Dropdown placement="right" :options="rowOptions(row)">
+              <Button
+                icon="lucide-more-horizontal"
+                variant="ghost"
+                class="ml-auto"
+                @click="confirmingDelete = ''"
               />
-            </ListCell>
-            <ListCell>
-              <div @click.stop>
-                <Switch
-                  size="sm"
-                  :model-value="Boolean(row.enabled)"
-                  :disabled="toggling.has(row.name)"
-                  :aria-label="__('Enabled')"
-                  @update:model-value="toggleAutomation(row, $event)"
-                />
-              </div>
-            </ListCell>
-            <ListCell>
-              <div
-                class="flex w-full items-center justify-between pr-1"
-                @click.stop
-              >
-                <Tooltip :text="getUser(row.owner).full_name">
-                  <UserAvatar :user="row.owner" size="sm" />
-                </Tooltip>
-                <Dropdown placement="right" :options="rowOptions(row)">
-                  <Button
-                    icon="lucide-more-horizontal"
-                    variant="ghost"
-                    class="ml-auto"
-                    @click="confirmingDelete = ''"
-                  />
-                </Dropdown>
-              </div>
-            </ListCell>
-          </ListRow>
-        </ListRows>
-      </List>
+            </Dropdown>
+          </span>
+        </button>
+      </div>
     </template>
   </SettingsLayoutBase>
   <WorkflowAutomationDetail
@@ -151,14 +138,6 @@ import { createDialog } from '@/utils/dialogs'
 import { usersStore } from '@/stores/users'
 import { disableSettingModalOutsideClick } from '@/composables/settings'
 import {
-  List,
-  ListCell,
-  ListHeader,
-  ListHeaderCell,
-  ListRow,
-  ListRows,
-} from 'frappe-ui/list'
-import {
   Badge,
   Button,
   Dialog,
@@ -181,14 +160,6 @@ const confirmingDelete = ref('')
 const showBuilder = ref(false)
 const dirty = ref(false)
 const toggling = reactive(new Set())
-
-const listColumns = [
-  'minmax(0, 4fr)',
-  'minmax(0, 2fr)',
-  'minmax(0, 1.3fr)',
-  'minmax(0, 1fr)',
-  'minmax(0, 1.5fr)',
-]
 
 // While the builder is up, a click outside must not take the settings dialog with it.
 watch(showBuilder, (open) => (disableSettingModalOutsideClick.value = open))
@@ -395,9 +366,3 @@ async function deleteAutomation(automation) {
 }
 </script>
 
-<style scoped>
-/* Match the header's rule so rows read as one table. */
-.workflow-automation-list :deep([data-slot='list-divider']) {
-  border-color: var(--outline-gray-2);
-}
-</style>
