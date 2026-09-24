@@ -205,10 +205,7 @@ const taskEvents = createListResource({
   orderBy: 'due_date asc',
   pageLength: 9999,
   auto: true,
-  transform: (tasks) =>
-    (tasks || [])
-      .map(taskToCalendarEvent)
-      .filter(Boolean),
+  transform: (tasks) => (tasks || []).map(taskToCalendarEvent).filter(Boolean),
 })
 
 function reload() {
@@ -283,9 +280,7 @@ async function rescheduleTask(payload) {
     })
     toast.success(__('Task rescheduled'))
   } catch (error) {
-    toast.error(
-      error?.messages?.[0] || __('Failed to reschedule task'),
-    )
+    toast.error(error?.messages?.[0] || __('Failed to reschedule task'))
   } finally {
     await reload()
   }
