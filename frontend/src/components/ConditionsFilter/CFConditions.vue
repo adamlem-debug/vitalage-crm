@@ -13,7 +13,6 @@
         :conjunction="getConjunction()"
         :disableAddCondition="props.disableAddCondition"
         :doctype="props.doctype"
-        :allowGrouping="props.allowGrouping"
         @remove="removeCondition(condition)"
         @unGroupConditions="unGroupConditions(condition)"
         @toggleConjunction="toggleConjunction"
@@ -45,7 +44,6 @@ const props = defineProps({
   level: { type: Number, default: 0 },
   disableAddCondition: { type: Boolean, default: false },
   doctype: { type: String, required: true },
-  allowGrouping: { type: Boolean, default: true },
 })
 
 const conditions = reactive(props.conditions)
@@ -74,7 +72,7 @@ const dropdownOptions = computed(() => {
       },
     },
   ]
-  if (props.allowGrouping && props.level < 3) {
+  if (props.level < 3) {
     options.push({
       label: __('Add Condition Group'),
       onClick: () => {
