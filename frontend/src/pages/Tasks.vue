@@ -24,11 +24,18 @@
     v-model:updatedPageCount="updatedPageCount"
     doctype="CRM Task"
     :options="{
-      allowedViews: ['list', 'kanban'],
+      allowedViews: ['list', 'kanban', 'calendar'],
     }"
   />
+  <TaskCalendarView
+    v-if="$route.params.viewType == 'calendar'"
+    ref="taskCalendarView"
+    :filters="calendarFilters"
+    @showTask="showTask"
+    @createTask="createTaskFromCalendar"
+  />
   <KanbanView
-    v-if="$route.params.viewType == 'kanban' && rows.length"
+    v-else-if="$route.params.viewType == 'kanban' && rows.length"
     v-model="tasks"
     :options="{
       onClick: (row) => showTask(row.name),
@@ -206,6 +213,7 @@ import ViewControls from '@/components/ViewControls.vue'
 import TasksListView from '@/components/ListViews/TasksListView.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
 import KanbanView from '@/components/Kanban/KanbanView.vue'
+import TaskCalendarView from '@/components/TaskCalendarView.vue'
 import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
 import { useDoctypeModal } from '@/composables/doctypeModal'
 import { getMeta } from '@/stores/meta'
@@ -226,6 +234,7 @@ const { capture } = useTelemetry()
 const router = useRouter()
 
 const tasksListView = ref(null)
+const taskCalendarView = ref(null)
 
 // tasks data is loaded in the ViewControls component
 const tasks = ref({})
@@ -233,6 +242,8 @@ const loadMore = ref(1)
 const triggerResize = ref(1)
 const updatedPageCount = ref(20)
 const viewControls = ref(null)
+
+const calendarFilters = computed(() => tasks.value?.params?.filters || {})
 
 const showDeleteTaskModal = ref(false)
 const taskToDelete = ref(null)
@@ -335,12 +346,14 @@ const { showModal } = useDoctypeModal()
 
 const taskCallbacks = {
   afterInsert: () => {
-    tasks.value.reload()
+    tasks.value?.reload?.()
+    taskCalendarView.value?.reload?.()
     updateOnboardingStep('create_first_task')
     capture('task_created')
   },
   afterUpdate: () => {
-    tasks.value.reload()
+    tasks.value?.reload?.()
+    taskCalendarView.value?.reload?.()
     capture('task_updated')
   },
 }
@@ -368,6 +381,19 @@ function createTask(column) {
     doctype: 'CRM Task',
     title: 'Task',
     defaults: defaults,
+    callbacks: taskCallbacks,
+  })
+}
+
+function createTaskFromCalendar(defaults = {}) {
+  showModal({
+    doctype: 'CRM Task',
+    title: 'Task',
+    defaults: {
+      status: 'Backlog',
+      priority: 'Low',
+      ...defaults,
+    },
     callbacks: taskCallbacks,
   })
 }
