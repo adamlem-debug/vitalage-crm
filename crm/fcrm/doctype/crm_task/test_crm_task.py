@@ -277,6 +277,7 @@ class TestCRMTask(FrappeTestCase):
 				{"user": "participant.remove@example.com"},
 			],
 		)
+		task.reload()
 
 		task.set(
 			"participants",
