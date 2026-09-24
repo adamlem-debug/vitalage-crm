@@ -222,6 +222,114 @@ class TestCRMTask(FrappeTestCase):
 		self.assertIn("Administrator", assignees_after)
 
 
+	def test_task_participants_are_additional_assignees(self):
+		"""Primary assignee and Participants are all assigned to the Task."""
+		for email, first_name in [
+			("participant.one@example.com", "Participant One"),
+			("participant.two@example.com", "Participant Two"),
+		]:
+			if not frappe.db.exists("User", email):
+				frappe.get_doc(
+					{
+						"doctype": "User",
+						"email": email,
+						"first_name": first_name,
+					}
+				).insert()
+
+		task = create_test_task(
+			title="Multi-assignee Task",
+			assigned_to="Administrator",
+			participants=[
+				{"user": "participant.one@example.com"},
+				{"user": "participant.two@example.com"},
+			],
+		)
+
+		self.assertEqual(
+			task.get_assigned_users(),
+			{
+				"Administrator",
+				"participant.one@example.com",
+				"participant.two@example.com",
+			},
+		)
+
+	def test_removed_task_participant_is_unassigned(self):
+		"""Removing a Participant removes only that user's Task assignment."""
+		for email, first_name in [
+			("participant.keep@example.com", "Participant Keep"),
+			("participant.remove@example.com", "Participant Remove"),
+		]:
+			if not frappe.db.exists("User", email):
+				frappe.get_doc(
+					{
+						"doctype": "User",
+						"email": email,
+						"first_name": first_name,
+					}
+				).insert()
+
+		task = create_test_task(
+			title="Participant removal Task",
+			assigned_to="Administrator",
+			participants=[
+				{"user": "participant.keep@example.com"},
+				{"user": "participant.remove@example.com"},
+			],
+		)
+
+		task.set(
+			"participants",
+			[{"user": "participant.keep@example.com"}],
+		)
+		task.save()
+		task.reload()
+
+		self.assertEqual(
+			task.get_assigned_users(),
+			{
+				"Administrator",
+				"participant.keep@example.com",
+			},
+		)
+
+	def test_task_participants_map_to_event_attendees(self):
+		"""Additional Task participants become Event User participants."""
+		from crm.fcrm.task_calendar_sync import set_event_participants
+
+		task = frappe.get_doc(
+			{
+				"doctype": "CRM Task",
+				"title": "Calendar participants Task",
+				"assigned_to": "Administrator",
+				"participants": [
+					{"user": "Administrator"},
+					{"user": "doctor@example.com"},
+					{"user": "nurse@example.com"},
+				],
+			}
+		)
+		event = frappe.new_doc("Event")
+
+		set_event_participants(event, task)
+
+		self.assertEqual(
+			[
+				(
+					row.reference_doctype,
+					row.reference_docname,
+					row.email,
+				)
+				for row in event.event_participants
+			],
+			[
+				("User", "doctor@example.com", "doctor@example.com"),
+				("User", "nurse@example.com", "nurse@example.com"),
+			],
+		)
+
+
 def create_test_task(**kwargs):
 	"""Helper function to create a CRM Task for testing"""
 	data = {"doctype": "CRM Task"}
