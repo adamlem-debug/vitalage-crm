@@ -43,8 +43,8 @@
           />
           <ColumnSettings
             v-else-if="
-            route.params.viewType !== 'calendar' && !options.hideColumnsButton
-          "
+              route.params.viewType !== 'calendar' && !options.hideColumnsButton
+            "
             v-model="list"
             :doctype="doctype"
             :hideLabel="isMobileView"
