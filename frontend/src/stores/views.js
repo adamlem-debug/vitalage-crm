@@ -13,6 +13,16 @@ export const viewsStore = defineStore('crm-views', (doctype) => {
   let standardViews = ref({})
   const defaultViews = reactive({})
 
+  const doctypeRouteMap = {
+    'CRM Lead': 'Leads',
+    'CRM Deal': 'Deals',
+    Contact: 'Contacts',
+    'CRM Organization': 'Organizations',
+    'FCRM Note': 'Notes',
+    'CRM Task': 'Tasks',
+    'CRM Call Log': 'Call Logs',
+  }
+
   // Views
   const views = createResource({
     url: 'crm.api.views.get_views',
@@ -23,6 +33,7 @@ export const viewsStore = defineStore('crm-views', (doctype) => {
     transform(views) {
       pinnedViews.value = []
       publicViews.value = []
+      standardViews.value = {}
       Object.keys(defaultViews).forEach((key) => delete defaultViews[key])
       for (let view of views) {
         viewsByName[view.name] = view
@@ -36,8 +47,11 @@ export const viewsStore = defineStore('crm-views', (doctype) => {
         if (view.is_standard && view.dt) {
           standardViews.value[view.dt + ' ' + view.type] = view
         }
-        if (view.is_default && view.route_name) {
-          defaultViews[view.route_name] = view
+        if (view.is_default) {
+          const routeName = view.route_name || doctypeRouteMap[view.dt]
+          if (routeName) {
+            defaultViews[routeName] = view
+          }
         }
       }
       return views
