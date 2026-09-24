@@ -81,6 +81,7 @@
         :level="props.level"
         :disableAddCondition="props.disableAddCondition"
         :doctype="props.doctype"
+        :allowGrouping="props.allowGrouping"
       />
       <Button
         v-if="props.isGroup && (props.level == 2 || props.level == 4)"
@@ -103,6 +104,7 @@
         :level="props.level"
         :disableAddCondition="props.disableAddCondition"
         :doctype="props.doctype"
+        :allowGrouping="props.allowGrouping"
       />
     </template>
   </Dialog>
@@ -144,6 +146,7 @@ const props = defineProps({
   conjunction: { type: String, default: 'and' },
   disableAddCondition: { type: Boolean, default: false },
   doctype: { type: String, default: '' },
+  allowGrouping: { type: Boolean, default: true },
 })
 
 const condition = reactive(props.condition)
@@ -151,7 +154,7 @@ const condition = reactive(props.condition)
 const dropdownOptions = computed(() => {
   const options = []
 
-  if (!props.isGroup && props.level < 4) {
+  if (props.allowGrouping && !props.isGroup && props.level < 4) {
     options.push({
       label: __('Turn into a Group'),
       icon: () => h(GroupIcon),
