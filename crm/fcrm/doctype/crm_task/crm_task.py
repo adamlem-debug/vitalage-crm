@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 from frappe.desk.form.assign_to import add as assign
+import frappe
 from frappe.desk.form.assign_to import remove as unassign
 from frappe.model.document import Document
 
@@ -58,6 +59,18 @@ class CRMTask(Document):
 					"description": self.title or self.description,
 				}
 			)
+
+		# Frappe's assignment helpers update/clear a physical assigned_to
+		# field while adding or removing ToDos. For CRM Task that field is
+		# our primary assignee, so always restore it after syncing the
+		# additional participant assignments.
+		frappe.db.set_value(
+			self.doctype,
+			self.name,
+			"assigned_to",
+			self.assigned_to,
+			update_modified=False,
+		)
 
 	@staticmethod
 	def default_list_data():
