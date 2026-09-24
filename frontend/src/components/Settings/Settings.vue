@@ -47,7 +47,6 @@
 <script setup>
 import LucideLayoutDashboard from '~icons/lucide/layout-dashboard'
 import LucideNetwork from '~icons/lucide/network'
-import LucideWorkflow from '~icons/lucide/workflow'
 import LucideTextCursorInput from '~icons/lucide/text-cursor-input'
 import MonitorCogIcon from '~icons/lucide/monitor-cog'
 import SlidersIcon from '@/components/Icons/SlidersIcon.vue'
@@ -73,7 +72,6 @@ import HomeActions from '@/components/Settings/HomeActions.vue'
 import FormsSettings from '@/components/Settings/Forms/FormsSettings.vue'
 import GeneralSettings from '@/components/Settings/GeneralSettings.vue'
 import DashboardSettings from '@/components/Settings/DashboardSettings.vue'
-import WorkflowAutomationPage from '@/components/Settings/WorkflowAutomations/WorkflowAutomationPage.vue'
 import EmailTemplatePage from '@/components/Settings/EmailTemplate/EmailTemplatePage.vue'
 import TelephonyPage from '@/components/Settings/Telephony/TelephonyPage.vue'
 import EmailConfig from '@/components/Settings/EmailConfig.vue'
@@ -186,11 +184,6 @@ const tabs = computed(() => {
     {
       label: __('Automation & Rules'),
       items: [
-        {
-          label: __('Workflow Automations'),
-          icon: LucideWorkflow,
-          component: markRaw(WorkflowAutomationPage),
-        },
         {
           label: __('Assignment Rules'),
           icon: markRaw(h(SettingsIcon2, { class: 'rotate-90' })),
