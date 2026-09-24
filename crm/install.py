@@ -325,7 +325,6 @@ def add_email_account_custom_field():
 		frappe.clear_cache(doctype="Email Account")
 
 
-
 def add_web_form_custom_fields():
 	"""Install CRM-specific fields on the native Web Form doctype."""
 	meta = frappe.get_meta("Web Form")
@@ -354,6 +353,7 @@ def add_web_form_custom_fields():
 		}
 	)
 	frappe.clear_cache(doctype="Web Form")
+
 
 def add_default_industries():
 	industries = [
