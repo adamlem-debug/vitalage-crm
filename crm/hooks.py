@@ -144,78 +144,6 @@ has_permission = {
 	"CRM Notification": "crm.fcrm.doctype.crm_notification.crm_notification.has_permission",
 }
 
-# Automation Engine
-# -----------------
-# CRM relationships, actions and events available to Automation Flows.
-
-automation_relationships = ["crm.automation.relationships.CRMRelationshipProvider"]
-
-automation_actions = [
-	"crm.automation.actions.AdjustLeadScore",
-	"crm.automation.actions.SetLeadTemperature",
-	"crm.automation.actions.ConvertLeadToDeal",
-	"crm.automation.actions.SendEmailToRecord",
-	"crm.automation.actions.SendCRMNotification",
-]
-
-MESSAGE_CORRELATIONS = [
-	{"label": "This email thread", "value": "{{ doc.message_id or doc.name }}"},
-	{
-		"label": "This lead or deal",
-		"value": "{{ doc.reference_doctype }}:{{ doc.reference_name }}",
-	},
-]
-RECORD_CORRELATION = [{"label": "This record", "value": "{{ doc.name }}"}]
-
-REFERENCE_SUBJECT = {
-	"doctype_key": "reference_doctype",
-	"name_key": "reference_name",
-	"doctypes": ["CRM Lead", "CRM Deal"],
-}
-LEAD_SUBJECT = {"doctype": "CRM Lead", "name_key": "lead"}
-DEAL_SUBJECT = {"doctype": "CRM Deal", "name_key": "deal"}
-
-automation_events = [
-	{
-		"crm.prospect_message_sent": {
-			"label": "We emailed the prospect",
-			"subject": REFERENCE_SUBJECT,
-			"correlation_options": MESSAGE_CORRELATIONS,
-		},
-		"crm.prospect_message_received": {
-			"label": "The prospect replied",
-			"subject": REFERENCE_SUBJECT,
-			"correlation_options": MESSAGE_CORRELATIONS,
-		},
-		"crm.lead_qualified": {"label": "Lead was qualified", "subject": LEAD_SUBJECT},
-		"crm.lead_converted": {
-			"label": "Lead became a deal",
-			"subject": LEAD_SUBJECT,
-			"correlation_options": RECORD_CORRELATION,
-		},
-		"crm.deal_stage_changed": {
-			"label": "Deal changed stage",
-			"subject": DEAL_SUBJECT,
-			"correlation_options": RECORD_CORRELATION,
-		},
-		"crm.deal_won": {
-			"label": "Deal was won",
-			"subject": DEAL_SUBJECT,
-			"correlation_options": RECORD_CORRELATION,
-		},
-		"crm.deal_lost": {
-			"label": "Deal was lost",
-			"subject": DEAL_SUBJECT,
-			"correlation_options": RECORD_CORRELATION,
-		},
-		"crm.task_overdue": {
-			"label": "Task went overdue",
-			"subject": REFERENCE_SUBJECT,
-			"correlation_options": RECORD_CORRELATION,
-		},
-	}
-]
-
 # DocType Class
 # ---------------
 # Override standard doctype classes
@@ -242,10 +170,7 @@ doc_events = {
 		"on_update": ["crm.api.todo.on_update"],
 	},
 	"Communication": {
-		"after_insert": [
-			"crm.utils.on_communication_insert",
-			"crm.automation.events.on_communication",
-		],
+		"after_insert": ["crm.utils.on_communication_insert"],
 		"on_update": ["crm.utils.on_communication_update"],
 	},
 	"Comment": {
@@ -254,10 +179,7 @@ doc_events = {
 	},
 	"WhatsApp Message": {
 		"validate": ["crm.api.whatsapp.validate"],
-		"on_update": [
-			"crm.api.whatsapp.on_update",
-			"crm.automation.events.on_whatsapp_message",
-		],
+		"on_update": ["crm.api.whatsapp.on_update"],
 	},
 	"CRM Task": {
 		"on_update": ["crm.fcrm.task_calendar_sync.queue_task_calendar_sync"],
@@ -267,13 +189,11 @@ doc_events = {
 	"CRM Deal": {
 		"before_insert": ["crm.api.form.enrich_form_submission"],
 		"on_update": [
-			"crm.fcrm.doctype.erpnext_crm_settings.erpnext_crm_settings.create_customer_in_erpnext",
-			"crm.automation.events.on_deal_update",
+			"crm.fcrm.doctype.erpnext_crm_settings.erpnext_crm_settings.create_customer_in_erpnext"
 		],
 	},
 	"CRM Lead": {
 		"before_insert": ["crm.api.form.enrich_form_submission"],
-		"on_update": ["crm.automation.events.on_lead_update"],
 	},
 	"Sales Order": {
 		"before_validate": [
@@ -309,7 +229,6 @@ doc_events = {
 # ---------------
 
 scheduler_events = {
-	"hourly": ["crm.automation.events.emit_overdue_tasks"],
 	"daily": [
 		"crm.fcrm.doctype.crm_view_settings.crm_view_settings.clear_old_versions",
 	],
