@@ -1,8 +1,8 @@
 # Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-from frappe.desk.form.assign_to import add as assign
 import frappe
+from frappe.desk.form.assign_to import add as assign
 from frappe.desk.form.assign_to import remove as unassign
 from frappe.model.document import Document
 
