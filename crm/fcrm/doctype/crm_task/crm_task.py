@@ -13,8 +13,9 @@ class CRMTask(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from crm.fcrm.doctype.crm_task_participant.crm_task_participant import CRMTaskParticipant
 		from frappe.types import DF
+
+		from crm.fcrm.doctype.crm_task_participant.crm_task_participant import CRMTaskParticipant
 
 		assigned_to: DF.Link | None
 		description: DF.TextEditor | None
@@ -36,11 +37,7 @@ class CRMTask(Document):
 		self.sync_assignments()
 
 	def get_assignment_users(self):
-		users = {
-			row.user
-			for row in (self.get("participants") or [])
-			if row.user
-		}
+		users = {row.user for row in (self.get("participants") or []) if row.user}
 		if self.assigned_to:
 			users.add(self.assigned_to)
 		return users
