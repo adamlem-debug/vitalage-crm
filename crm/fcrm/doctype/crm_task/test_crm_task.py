@@ -221,7 +221,6 @@ class TestCRMTask(FrappeTestCase):
 		self.assertEqual(len(assignees_after), initial_count)
 		self.assertIn("Administrator", assignees_after)
 
-
 	def test_task_participants_are_additional_assignees(self):
 		"""Primary assignee and Participants are all assigned to the Task."""
 		for email, first_name in [
