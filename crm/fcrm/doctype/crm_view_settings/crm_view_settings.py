@@ -260,7 +260,10 @@ def create_or_update_standard_view(view: dict):
 		doc.kanban_fields = json.dumps(kanban_fields)
 		doc.columns = json.dumps(columns)
 		doc.rows = json.dumps(rows)
-		doc.is_default = view.is_default or False
+		# Routine filter/column saves do not send is_default.
+		# Preserve the current default unless the caller explicitly changes it.
+		if "is_default" in view:
+			doc.is_default = bool(view.is_default)
 		doc.save()
 	else:
 		doc = frappe.new_doc("CRM View Settings")
