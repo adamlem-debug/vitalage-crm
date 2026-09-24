@@ -134,6 +134,50 @@ def get_google_calendar(user):
     )
 
 
+def get_task_participant_users(task):
+    """
+    Return unique additional Task participants in selection order.
+
+    The primary Assigned To user remains the Event owner/organizer,
+    so it is not duplicated in Event Participants.
+    """
+
+    users = []
+    seen = set()
+
+    for row in (task.get("participants") or []):
+        user = row.get("user")
+        if (
+            not user
+            or user == task.assigned_to
+            or user in seen
+        ):
+            continue
+
+        seen.add(user)
+        users.append(user)
+
+    return users
+
+
+def set_event_participants(event, task):
+    """
+    Make CRM Task participants the source of truth for Event attendees.
+    """
+
+    event.set("event_participants", [])
+
+    for user in get_task_participant_users(task):
+        event.append(
+            "event_participants",
+            {
+                "reference_doctype": "User",
+                "reference_docname": user,
+                "email": user,
+            },
+        )
+
+
 def delete_calendar_event(event_name):
     """
     Delete one Frappe Event.
@@ -303,6 +347,11 @@ def create_calendar_event(
                 task.name
             ),
         }
+    )
+
+    set_event_participants(
+        event,
+        task,
     )
 
     event.insert(
@@ -577,6 +626,11 @@ def sync_task_calendar_event(task_name):
 
         existing_event.custom_crm_task_name = str(
             task.name
+        )
+
+        set_event_participants(
+            existing_event,
+            task,
         )
 
         existing_event.save(
