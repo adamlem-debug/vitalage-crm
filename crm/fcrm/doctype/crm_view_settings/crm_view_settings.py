@@ -36,7 +36,7 @@ class CRMViewSettings(Document):
 		route_name: DF.Data | None
 		rows: DF.Code | None
 		title_field: DF.Data | None
-		type: DF.Literal["list", "group_by", "kanban"]
+		type: DF.Literal["list", "group_by", "kanban", "calendar"]
 		user: DF.Link | None
 	# end: auto-generated types
 
@@ -273,6 +273,8 @@ def create_or_update_standard_view(view: dict):
 			label = "Group By"
 		elif view.type == "kanban":
 			label = "Kanban"
+		elif view.type == "calendar":
+			label = "Calendar"
 
 		doc.name = view.label or label
 		doc.label = view.label or label

@@ -29,7 +29,7 @@
             @click="reload()"
           />
           <SortBy
-            v-if="route.params.viewType !== 'kanban'"
+            v-if="!['kanban', 'calendar'].includes(route.params.viewType)"
             v-model="list"
             :doctype="doctype"
             :hideLabel="isMobileView"
@@ -42,7 +42,9 @@
             @update="updateKanbanSettings"
           />
           <ColumnSettings
-            v-else-if="!options.hideColumnsButton"
+            v-else-if="
+              route.params.viewType !== 'calendar' && !options.hideColumnsButton
+            "
             v-model="list"
             :doctype="doctype"
             :hideLabel="isMobileView"
@@ -174,7 +176,7 @@
           @update="updateFilter"
         />
         <SortBy
-          v-if="route.params.viewType !== 'kanban'"
+          v-if="!['kanban', 'calendar'].includes(route.params.viewType)"
           v-model="list"
           :doctype="doctype"
           @update="updateSort"
@@ -186,7 +188,9 @@
           @update="updateKanbanSettings"
         />
         <ColumnSettings
-          v-else-if="!options.hideColumnsButton"
+          v-else-if="
+            route.params.viewType !== 'calendar' && !options.hideColumnsButton
+          "
           v-model="list"
           :doctype="doctype"
           @update="(isDefault) => updateColumns(isDefault)"
@@ -209,7 +213,7 @@
                     }),
                   condition: () =>
                     !options.hideColumnsButton &&
-                    route.params.viewType !== 'kanban',
+                    !['kanban', 'calendar'].includes(route.params.viewType),
                 },
                 {
                   label: __('Export'),
@@ -217,7 +221,7 @@
                   onClick: () => (showExportDialog = true),
                   condition: () =>
                     !options.hideColumnsButton &&
-                    route.params.viewType !== 'kanban',
+                    !['kanban', 'calendar'].includes(route.params.viewType),
                 },
                 {
                   label: __('Customize Quick Filters'),
@@ -303,6 +307,7 @@
 import ListIcon from '@/components/Icons/ListIcon.vue'
 import KanbanIcon from '@/components/Icons/KanbanIcon.vue'
 import GroupByIcon from '@/components/Icons/GroupByIcon.vue'
+import CalendarIcon from '@/components/Icons/CalendarIcon.vue'
 import QuickFilterField from '@/components/QuickFilterField.vue'
 import RefreshIcon from '@/components/Icons/RefreshIcon.vue'
 import EditIcon from '@/components/Icons/EditIcon.vue'
@@ -391,6 +396,11 @@ function getViewType() {
       name: 'kanban',
       label: __('Kanban'),
       icon: markRaw(KanbanIcon),
+    },
+    calendar: {
+      name: 'calendar',
+      label: __('Calendar'),
+      icon: markRaw(CalendarIcon),
     },
   }
 
@@ -641,6 +651,17 @@ if (allowedViews.includes('group_by')) {
     },
   })
 }
+if (allowedViews.includes('calendar')) {
+  standardViews.push({
+    name: 'calendar',
+    label: __('Calendar'),
+    icon: markRaw(CalendarIcon),
+    onClick() {
+      viewUpdated.value = false
+      router.push({ name: route.name, params: { viewType: 'calendar' } })
+    },
+  })
+}
 
 function getIcon(icon, type) {
   if (isEmoji(icon)) {
@@ -649,6 +670,8 @@ function getIcon(icon, type) {
     return markRaw(GroupByIcon)
   } else if (!icon && type === 'kanban') {
     return markRaw(KanbanIcon)
+  } else if (!icon && type === 'calendar') {
+    return markRaw(CalendarIcon)
   }
   return icon || markRaw(ListIcon)
 }

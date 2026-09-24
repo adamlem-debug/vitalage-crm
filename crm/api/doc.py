@@ -182,6 +182,21 @@ def get_quick_filters(doctype: str, cached: bool = True):
 	else:
 		fields = [field for field in meta.fields if field.in_standard_filter]
 
+	# VitalAge: always expose Task Type as a CRM Task quick filter.
+	# Existing sites can have CRM Global Settings that override DocField
+	# in_standard_filter flags, so inject the custom field here as well.
+	if doctype == "CRM Task":
+		task_type_field = next(
+			(field for field in meta.fields if field.fieldname == "custom_task_type"),
+			None,
+		)
+		if task_type_field and not any(field.get("fieldname") == "custom_task_type" for field in fields):
+			insert_at = next(
+				(index + 1 for index, field in enumerate(fields) if field.get("fieldname") == "title"),
+				0,
+			)
+			fields.insert(insert_at, task_type_field)
+
 	for field in fields:
 		options = field.get("options")
 		if field.get("fieldtype") == "Select" and options and isinstance(options, str):
