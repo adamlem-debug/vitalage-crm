@@ -39,6 +39,7 @@ def _catalogue_data(doc) -> dict:
 	rate = get_item_price_rate(doc.name, doc.get("stock_uom"))
 	if rate is not None:
 		data["standard_rate"] = rate
+	data["standard_rate"] = frappe.utils.flt(data["standard_rate"])
 	return data
 
 
