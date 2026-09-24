@@ -65,7 +65,7 @@ export default defineConfig(async ({ mode }) => {
       // `dompurify` is an implicit dep of @framework/ui's sanitize util (not declared in its
       // package.json); dedupe resolves it to the host's copy since the symlinked source has
       // no node_modules of its own.
-      dedupe: ['vue', 'vue-router', 'frappe-ui', 'dompurify', 'vuedraggable'],
+      dedupe: ['vue', 'vue-router', 'frappe-ui', 'dompurify'],
     },
     optimizeDeps: {
       include: [
