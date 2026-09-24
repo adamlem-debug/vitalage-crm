@@ -190,15 +190,9 @@ def get_quick_filters(doctype: str, cached: bool = True):
 			(field for field in meta.fields if field.fieldname == "custom_task_type"),
 			None,
 		)
-		if task_type_field and not any(
-			field.get("fieldname") == "custom_task_type" for field in fields
-		):
+		if task_type_field and not any(field.get("fieldname") == "custom_task_type" for field in fields):
 			insert_at = next(
-				(
-					index + 1
-					for index, field in enumerate(fields)
-					if field.get("fieldname") == "title"
-				),
+				(index + 1 for index, field in enumerate(fields) if field.get("fieldname") == "title"),
 				0,
 			)
 			fields.insert(insert_at, task_type_field)
