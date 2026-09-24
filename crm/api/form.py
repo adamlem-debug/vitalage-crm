@@ -562,7 +562,7 @@ def test_submit_form(name: str, values: dict | str) -> dict:
 # `in_web_form` flag. No CRM-owned guest endpoint is needed for that path.
 
 
-def enrich_form_submission(doc):
+def enrich_form_submission(doc, method=None):
 	"""Called from the CRM Lead/Deal `before_insert`: when the record is created via a
 	web form, apply the same enrichment the CRM applies on manual creation.
 
