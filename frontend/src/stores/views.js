@@ -11,7 +11,7 @@ export const viewsStore = defineStore('crm-views', (doctype) => {
   let pinnedViews = ref([])
   let publicViews = ref([])
   let standardViews = ref({})
-  const defaultView = ref(null)
+  const defaultViews = reactive({})
 
   // Views
   const views = createResource({
@@ -23,7 +23,7 @@ export const viewsStore = defineStore('crm-views', (doctype) => {
     transform(views) {
       pinnedViews.value = []
       publicViews.value = []
-      defaultView.value = null
+      Object.keys(defaultViews).forEach((key) => delete defaultViews[key])
       for (let view of views) {
         viewsByName[view.name] = view
         view.type = view.type || 'list'
@@ -36,16 +36,33 @@ export const viewsStore = defineStore('crm-views', (doctype) => {
         if (view.is_standard && view.dt) {
           standardViews.value[view.dt + ' ' + view.type] = view
         }
-        if (view.is_default) {
-          defaultView.value = view
+        if (view.is_default && view.route_name) {
+          defaultViews[view.route_name] = view
         }
       }
       return views
     },
   })
 
-  function getDefaultView() {
-    return defaultView.value
+  const homeRoutePriority = [
+    'Leads',
+    'Deals',
+    'Contacts',
+    'Organizations',
+    'Notes',
+    'Tasks',
+    'Call Logs',
+  ]
+
+  function getDefaultView(routeName = null) {
+    if (routeName) return defaultViews[routeName] || null
+
+    const candidates = [
+      ...homeRoutePriority,
+      ...Object.keys(defaultViews).sort(),
+    ]
+    const route = candidates.find((routeName) => defaultViews[routeName])
+    return route ? defaultViews[route] : null
   }
 
   function getView(view, type, doctype = null) {
@@ -72,7 +89,7 @@ export const viewsStore = defineStore('crm-views', (doctype) => {
 
   return {
     views,
-    defaultView,
+    defaultViews,
     standardViews,
     getDefaultView,
     getPinnedViews,
