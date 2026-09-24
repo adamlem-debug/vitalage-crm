@@ -2,6 +2,7 @@
 # See license.txt
 
 import frappe
+
 try:
 	from frappe.tests import IntegrationTestCase
 except ImportError:  # Frappe v15

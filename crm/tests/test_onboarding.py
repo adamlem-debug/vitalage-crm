@@ -3,6 +3,7 @@
 
 import frappe
 from frappe.exceptions import FrappeTypeError
+
 try:
 	from frappe.tests import IntegrationTestCase
 except ImportError:  # Frappe v15
@@ -37,10 +38,13 @@ class TestOnboardingAPI(IntegrationTestCase):
 		super().tearDown()
 
 	def _make_lead(self, email, owner=None):
-		lead = frappe.get_doc(
-			{"doctype": "CRM Lead", "first_name": "Test", "email": email, "lead_owner": owner}
-		)
+		lead = frappe.get_doc({"doctype": "CRM Lead", "first_name": "Test", "email": email})
 		lead.insert(ignore_permissions=True)
+		if owner:
+			# Setting lead_owner during insert creates assignment records and can commit in
+			# Frappe v15, invalidating this test class's per-test savepoint.
+			frappe.db.set_value("CRM Lead", lead.name, "lead_owner", owner, update_modified=False)
+			lead.lead_owner = owner
 		return lead
 
 	def _make_deal(self):

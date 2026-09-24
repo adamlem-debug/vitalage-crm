@@ -61,7 +61,7 @@ def get_context(context):
 			"fieldtype": f.fieldtype,
 			"options": f.options or "",
 			"reqd": int(f.reqd or 0),
-			"placeholder": f.placeholder or "",
+			"placeholder": f.get("placeholder") or "",
 			"description": f.description or "",
 			# conditional-logic expressions, evaluated client-side (see crm_form.html)
 			"depends_on": f.depends_on or "",
