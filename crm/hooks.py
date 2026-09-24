@@ -134,11 +134,13 @@ before_uninstall = "crm.uninstall.before_uninstall"
 permission_query_conditions = {
 	"CRM Lead": "crm.permissions.org_hierarchy.get_lead_permission_query_conditions",
 	"CRM Deal": "crm.permissions.org_hierarchy.get_deal_permission_query_conditions",
+	"CRM Notification": "crm.fcrm.doctype.crm_notification.crm_notification.get_permission_query_conditions",
 }
 
 has_permission = {
 	"CRM Lead": "crm.permissions.org_hierarchy.has_lead_permission",
 	"CRM Deal": "crm.permissions.org_hierarchy.has_deal_permission",
+	"CRM Notification": "crm.fcrm.doctype.crm_notification.crm_notification.has_permission",
 }
 
 # DocType Class
@@ -158,7 +160,11 @@ doc_events = {
 	"Contact": {
 		"validate": ["crm.api.contact.validate"],
 	},
+	"Notification Log": {
+		"before_insert": ["crm.extends.notification_log.before_insert"],
+	},
 	"ToDo": {
+		"validate": ["crm.api.todo.validate"],
 		"after_insert": ["crm.api.todo.after_insert"],
 		"on_update": ["crm.api.todo.on_update"],
 	},
