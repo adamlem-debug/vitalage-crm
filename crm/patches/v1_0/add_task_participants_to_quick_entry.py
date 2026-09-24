@@ -2,7 +2,6 @@ import json
 
 import frappe
 
-
 LAYOUT_NAME = "CRM Task-Quick Entry"
 
 
