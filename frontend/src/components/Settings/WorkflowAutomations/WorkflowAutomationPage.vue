@@ -365,4 +365,3 @@ async function deleteAutomation(automation) {
   reloadList()
 }
 </script>
-
