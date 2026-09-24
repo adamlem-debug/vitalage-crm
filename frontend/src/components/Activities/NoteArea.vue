@@ -19,6 +19,11 @@
       <Dropdown
         :options="[
           {
+            label: __('Edit'),
+            icon: 'edit-2',
+            onClick: () => modalRef.showNote(note),
+          },
+          {
             label: __('Delete'),
             icon: 'trash-2',
             onClick: () => deleteNote(note.name),
@@ -67,6 +72,7 @@ import { usersStore } from '@/stores/users'
 
 defineProps({
   note: { type: Object, default: () => ({}) },
+  modalRef: { type: Object, default: () => ({}) },
 })
 
 const notes = defineModel({ type: Object })
