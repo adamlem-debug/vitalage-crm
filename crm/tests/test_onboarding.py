@@ -3,7 +3,10 @@
 
 import frappe
 from frappe.exceptions import FrappeTypeError
-from frappe.tests import IntegrationTestCase
+try:
+	from frappe.tests import IntegrationTestCase
+except ImportError:  # Frappe v15
+	from frappe.tests.utils import FrappeTestCase as IntegrationTestCase
 
 from crm.api.onboarding import get_first_deal, get_first_lead
 
