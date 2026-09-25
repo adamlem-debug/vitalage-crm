@@ -89,8 +89,13 @@ const router = useRouter()
 const { isManager } = usersStore()
 const { $dialog, $socket } = globalStore()
 
-const { document, scripts, triggerOnRender, triggerOnBeforeCreate } =
-  useDocument(props.doctype, props.docname || null)
+const {
+  document,
+  scripts,
+  setupFormScript,
+  triggerOnRender,
+  triggerOnBeforeCreate,
+} = useDocument(props.doctype, props.docname || null)
 
 const doc = computed(() => document.doc || {})
 
@@ -173,10 +178,24 @@ watch(
 )
 
 onMounted(async () => {
-  document.doc = {
-    ...document.doc,
-    ...props.defaults,
+  if (!editMode.value) {
+    document.doc = {
+      __newDocument: true,
+      doctype: props.doctype,
+      ...props.defaults,
+    }
+    document.fieldPropertyOverrides = {}
+    document.fieldHtmlMap = {}
+  } else {
+    document.doc = {
+      ...document.doc,
+      ...props.defaults,
+    }
   }
-  await triggerOnRender()
+
+  const setupRan = await setupFormScript()
+  if (!setupRan) {
+    await triggerOnRender()
+  }
 })
 </script>

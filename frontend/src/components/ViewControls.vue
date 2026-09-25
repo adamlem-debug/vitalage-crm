@@ -4,13 +4,29 @@
     class="flex flex-col justify-between gap-2 sm:px-5 px-3 py-4"
   >
     <div class="flex flex-col gap-2">
-      <div class="flex items-center justify-between gap-2 overflow-x-auto">
-        <div class="flex gap-2">
-          <Filter
-            v-model="list"
-            :doctype="doctype"
-            :default_filters="filters"
-            @update="updateFilter"
+      <div class="flex items-center justify-between gap-2">
+        <FadedScrollableDiv
+          class="flex flex-1 items-center overflow-x-auto -ml-1 h-9"
+          orientation="horizontal"
+        >
+          <div
+            v-for="filter in quickFilterList"
+            :key="filter.fieldname"
+            class="m-1 min-w-36"
+          >
+            <QuickFilterField
+              :filter="filter"
+              @applyQuickFilter="(f, v) => applyQuickFilter(f, v)"
+            />
+          </div>
+        </FadedScrollableDiv>
+        <div class="-ml-2 h-[70%] border-l" />
+        <div class="flex shrink-0 gap-2">
+          <Button
+            :tooltip="__('Refresh')"
+            :icon="RefreshIcon"
+            :loading="isLoading"
+            @click="reload()"
           />
           <GroupBy
             v-if="route.params.viewType === 'group_by'"
@@ -19,14 +35,11 @@
             :hideLabel="isMobileView"
             @update="updateGroupBy"
           />
-        </div>
-
-        <div class="flex gap-2">
-          <Button
-            :tooltip="__('Refresh')"
-            :icon="RefreshIcon"
-            :loading="isLoading"
-            @click="reload()"
+          <Filter
+            v-model="list"
+            :doctype="doctype"
+            :default_filters="filters"
+            @update="updateFilter"
           />
           <SortBy
             v-if="!['kanban', 'calendar'].includes(route.params.viewType)"
@@ -561,7 +574,25 @@ listResource = createResource({
 })
 
 list.value = listResource
-listResource.params = getParams()
+// Keep an unsaved view change on cached re-entry; don't reset to the saved view.
+// kanban_columns is excluded: pagination (load more) mutates it without being a user edit.
+const dirtySignature = (p) =>
+  JSON.stringify([
+    p.filters || {},
+    p.order_by,
+    p.view?.group_by_field,
+    p.column_field,
+    p.title_field,
+    p.kanban_fields,
+  ])
+const initialParams = getParams()
+if (!listResource.params) {
+  listResource.params = initialParams
+} else if (
+  dirtySignature(listResource.params) !== dirtySignature(initialParams)
+) {
+  viewUpdated.value = true
+}
 
 onMounted(() => useDebounceFn(reload, 100)())
 

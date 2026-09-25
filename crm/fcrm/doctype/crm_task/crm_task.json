@@ -15,6 +15,7 @@
   "reference_docname",
   "column_break_cqua",
   "assigned_to",
+  "participants",
   "status",
   "due_date",
   "section_break_bzhd",
@@ -51,6 +52,12 @@
    "in_standard_filter": 1,
    "label": "Assigned To",
    "options": "User"
+  },
+  {
+   "fieldname": "participants",
+   "fieldtype": "Table MultiSelect",
+   "label": "Participants",
+   "options": "CRM Task Participant"
   },
   {
    "fieldname": "status",

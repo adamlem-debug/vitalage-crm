@@ -1,6 +1,7 @@
 # Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
+import frappe
 from frappe.desk.form.assign_to import add as assign
 from frappe.desk.form.assign_to import remove as unassign
 from frappe.model.document import Document
@@ -15,10 +16,13 @@ class CRMTask(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		from crm.fcrm.doctype.crm_task_participant.crm_task_participant import CRMTaskParticipant
+
 		assigned_to: DF.Link | None
 		description: DF.TextEditor | None
 		due_date: DF.Datetime | None
 		name: DF.Int | None
+		participants: DF.Table[CRMTaskParticipant]
 		priority: DF.Literal["Low", "Medium", "High"]
 		reference_docname: DF.DynamicLink | None
 		reference_doctype: DF.Link | None
@@ -28,30 +32,45 @@ class CRMTask(Document):
 	# end: auto-generated types
 
 	def after_insert(self):
-		self.assign_to()
+		self.sync_assignments()
 
-	def validate(self):
-		if self.is_new() or not self.assigned_to:
-			return
+	def on_update(self):
+		self.sync_assignments()
 
-		if self.get_doc_before_save().assigned_to != self.assigned_to:
-			self.unassign_from_previous_user(self.get_doc_before_save().assigned_to)
-			self.assign_to()
+	def get_assignment_users(self):
+		users = {row.user for row in (self.get("participants") or []) if row.user}
+		if self.assigned_to:
+			users.add(self.assigned_to)
+		return users
 
-	def unassign_from_previous_user(self, user: str | None):
-		if user:
+	def sync_assignments(self):
+		desired_users = self.get_assignment_users()
+		current_users = set(self.get_assigned_users())
+
+		for user in current_users - desired_users:
 			unassign(self.doctype, self.name, user)
 
-	def assign_to(self):
-		if self.assigned_to:
+		for user in desired_users - current_users:
 			assign(
 				{
-					"assign_to": [self.assigned_to],
+					"assign_to": [user],
 					"doctype": self.doctype,
 					"name": self.name,
 					"description": self.title or self.description,
 				}
 			)
+
+		# Frappe's assignment helpers update/clear a physical assigned_to
+		# field while adding or removing ToDos. For CRM Task that field is
+		# our primary assignee, so always restore it after syncing the
+		# additional participant assignments.
+		frappe.db.set_value(
+			self.doctype,
+			self.name,
+			"assigned_to",
+			self.assigned_to,
+			update_modified=False,
+		)
 
 	@staticmethod
 	def default_list_data():
