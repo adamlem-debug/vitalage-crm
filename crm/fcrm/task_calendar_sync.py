@@ -219,15 +219,17 @@ def delete_task_calendar_history(
 	if current_event_name:
 		event_names.add(current_event_name)
 
-	historical_events = frappe.get_all(
-		"Event",
-		filters={
-			"custom_crm_task_name": str(task_name),
-		},
-		pluck="name",
-	)
+	event_meta = frappe.get_meta("Event")
+	if event_meta.has_field("custom_crm_task_name"):
+		historical_events = frappe.get_all(
+			"Event",
+			filters={
+				"custom_crm_task_name": str(task_name),
+			},
+			pluck="name",
+		)
 
-	event_names.update(historical_events)
+		event_names.update(historical_events)
 
 	for event_name in event_names:
 		delete_calendar_event(event_name)
