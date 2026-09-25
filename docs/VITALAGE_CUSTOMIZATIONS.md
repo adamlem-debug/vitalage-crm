@@ -277,6 +277,7 @@ Production calendar-eligible tasks use:
 Supported operational values:
 
 - 30
+- 45
 - 60
 - 90
 - 120 minutes
@@ -425,7 +426,25 @@ Related schema/site fields:
 - Google Calendar records belonging to Frappe Users
 - calendar eligibility/cancellation configuration on the site
 
-## 8.1 Lifecycle
+## 8.1 Calendar-enabled Task Types
+
+Task -> Event -> Google Calendar sync is intentionally limited to selected Task Types.
+
+Current configured/expected calendar-enabled Task Types:
+
+- Consultation
+- Nutritional consultation
+- Sample collection
+- Therapy
+- Concierge
+
+Other Task Types do not create/sync Frappe Events or Google Calendar events.
+
+The list is **configuration-driven**, not hardcoded in `task_calendar_sync.py`. It is read from the `calendar_task_types` child table in **VitalAge CRM Settings** by `get_calendar_settings()`.
+
+This means the enabled list can be changed administratively without changing Python code. If the site configuration is changed, this document should be updated at the same time.
+
+## 8.2 Lifecycle
 
 CRM Task update:
 
@@ -437,7 +456,7 @@ CRM Task delete:
 
 The sync job is queued only after the Task transaction commits.
 
-## 8.2 Event creation
+## 8.3 Event creation
 
 An Event is created when all required conditions are true:
 
@@ -457,7 +476,7 @@ Generated Event:
 - stores `custom_crm_task_name`
 - Task stores the current Event in `custom_calendar_event`
 
-## 8.3 Participants → Event attendees
+## 8.4 Participants → Event attendees
 
 Additional Task Participants become Frappe Event Participants.
 
@@ -469,7 +488,7 @@ Important implementation detail:
 
 Primary `assigned_to` remains the calendar owner/organizer and is not duplicated in Event Participants.
 
-## 8.4 Update/reassignment
+## 8.5 Update/reassignment
 
 Task changes update the current Event:
 
@@ -485,7 +504,7 @@ If the primary assignee changes to a user with a different Google Calendar:
 - the old active Event is removed;
 - a new Event is created in the new primary user's calendar.
 
-## 8.5 Cancellation/reactivation
+## 8.6 Cancellation/reactivation
 
 Configured cancellation statuses retain a terminal Event as history.
 
@@ -494,7 +513,7 @@ If the Task is later reactivated:
 - the old terminal Event remains historical;
 - a new active Event is created.
 
-## 8.6 External Google deletion reconciliation
+## 8.7 External Google deletion reconciliation
 
 Scheduler hook in `crm/hooks.py`:
 
