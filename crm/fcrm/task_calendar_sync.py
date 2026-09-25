@@ -48,17 +48,18 @@ def cleanup_task_notifications(doc, method=None):
 
 def cleanup_task_calendar_events(doc, method=None):
 	"""
-	Break Task <-> Event links before Frappe performs Task link validation.
+	Break all CRM Task <-> Event links before Frappe validates Task deletion.
 
-	Do not delete Event documents from inside CRM Task.on_trash. Frappe is already
-	in the middle of deleting the Task, so a nested Event deletion is fragile when
-	both documents link to each other. Instead, clear both directions here and
-	delete the captured Events after the Task deletion commits.
+	Event can point back to a CRM Task through VitalAge's custom field, Frappe's
+	standard reference_doctype/reference_docname pair, or Event's Dynamic Link
+	child rows. All of those references must be removed before Frappe runs its
+	linked-document checks.
 	"""
 
+	task_name = str(doc.name)
 	current_event_name = doc.get("custom_calendar_event")
 	event_names = get_task_calendar_event_names(
-		str(doc.name),
+		task_name,
 		current_event_name=current_event_name,
 	)
 
@@ -73,16 +74,51 @@ def cleanup_task_calendar_events(doc, method=None):
 		doc.custom_calendar_event = None
 
 	event_meta = frappe.get_meta("Event")
-	if event_meta.has_field("custom_crm_task_name"):
-		for event_name in event_names:
-			if frappe.db.exists("Event", event_name):
+
+	for event_name in event_names:
+		if not frappe.db.exists("Event", event_name):
+			continue
+
+		if event_meta.has_field("custom_crm_task_name"):
+			frappe.db.set_value(
+				"Event",
+				event_name,
+				"custom_crm_task_name",
+				None,
+				update_modified=False,
+			)
+
+		if event_meta.has_field("reference_doctype") and event_meta.has_field("reference_docname"):
+			reference = frappe.db.get_value(
+				"Event",
+				event_name,
+				["reference_doctype", "reference_docname"],
+				as_dict=True,
+			)
+			if (
+				reference
+				and reference.reference_doctype == "CRM Task"
+				and str(reference.reference_docname) == task_name
+			):
 				frappe.db.set_value(
 					"Event",
 					event_name,
-					"custom_crm_task_name",
-					None,
+					{
+						"reference_doctype": None,
+						"reference_docname": None,
+					},
 					update_modified=False,
 				)
+
+		frappe.db.delete(
+			"Dynamic Link",
+			{
+				"parenttype": "Event",
+				"parent": event_name,
+				"link_doctype": "CRM Task",
+				"link_name": task_name,
+			},
+		)
 
 	doc.flags.calendar_events_to_delete = list(event_names)
 
@@ -234,24 +270,47 @@ def get_task_calendar_event_names(
 	task_name,
 	current_event_name=None,
 ):
-	"""Return all known Event names linked to a CRM Task."""
+	"""Return Event names linked to a CRM Task through any supported mechanism."""
 
+	task_name = str(task_name)
 	event_names = set()
 
 	if current_event_name:
 		event_names.add(current_event_name)
 
 	event_meta = frappe.get_meta("Event")
+
 	if event_meta.has_field("custom_crm_task_name"):
-		historical_events = frappe.get_all(
-			"Event",
-			filters={
-				"custom_crm_task_name": str(task_name),
-			},
-			pluck="name",
+		event_names.update(
+			frappe.get_all(
+				"Event",
+				filters={"custom_crm_task_name": task_name},
+				pluck="name",
+			)
 		)
 
-		event_names.update(historical_events)
+	if event_meta.has_field("reference_doctype") and event_meta.has_field("reference_docname"):
+		event_names.update(
+			frappe.get_all(
+				"Event",
+				filters={
+					"reference_doctype": "CRM Task",
+					"reference_docname": task_name,
+				},
+				pluck="name",
+			)
+		)
+
+	dynamic_link_parents = frappe.get_all(
+		"Dynamic Link",
+		filters={
+			"parenttype": "Event",
+			"link_doctype": "CRM Task",
+			"link_name": task_name,
+		},
+		pluck="parent",
+	)
+	event_names.update(dynamic_link_parents)
 
 	return event_names
 
