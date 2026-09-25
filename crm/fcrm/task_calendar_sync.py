@@ -48,17 +48,19 @@ def cleanup_task_notifications(doc, method=None):
 
 def cleanup_task_calendar_events(doc, method=None):
 	"""
-	Delete Events linked to a CRM Task before Frappe performs link validation.
+	Break Task <-> Event links before Frappe performs Task link validation.
 
-	CRM Task and Event link to each other:
-	- CRM Task.custom_calendar_event -> Event
-	- Event.custom_crm_task_name -> CRM Task
-
-	Clear the Task -> Event link first so Frappe allows the Event to be deleted,
-	then remove the Event(s) so Frappe can proceed with deleting the Task.
+	Do not delete Event documents from inside CRM Task.on_trash. Frappe is already
+	in the middle of deleting the Task, so a nested Event deletion is fragile when
+	both documents link to each other. Instead, clear both directions here and
+	delete the captured Events after the Task deletion commits.
 	"""
 
 	current_event_name = doc.get("custom_calendar_event")
+	event_names = get_task_calendar_event_names(
+		str(doc.name),
+		current_event_name=current_event_name,
+	)
 
 	if current_event_name:
 		frappe.db.set_value(
@@ -70,18 +72,26 @@ def cleanup_task_calendar_events(doc, method=None):
 		)
 		doc.custom_calendar_event = None
 
-	delete_task_calendar_history(
-		str(doc.name),
-		current_event_name=current_event_name,
-	)
+	event_meta = frappe.get_meta("Event")
+	if event_meta.has_field("custom_crm_task_name"):
+		for event_name in event_names:
+			if frappe.db.exists("Event", event_name):
+				frappe.db.set_value(
+					"Event",
+					event_name,
+					"custom_crm_task_name",
+					None,
+					update_modified=False,
+				)
+
+	doc.flags.calendar_events_to_delete = list(event_names)
 
 
 def queue_task_calendar_delete(doc, method=None):
 	"""
 	Runs after CRM Task deletion.
 
-	Delete all Events historically belonging to the Task
-	after the transaction successfully commits.
+	Delete the Events captured during on_trash after the Task transaction commits.
 	"""
 
 	frappe.enqueue(
@@ -89,7 +99,7 @@ def queue_task_calendar_delete(doc, method=None):
 		queue="short",
 		enqueue_after_commit=True,
 		task_name=str(doc.name),
-		current_event_name=doc.get("custom_calendar_event"),
+		event_names=list(doc.flags.get("calendar_events_to_delete") or []),
 	)
 
 
@@ -220,14 +230,11 @@ def delete_calendar_event(event_name):
 		)
 
 
-def delete_task_calendar_history(
+def get_task_calendar_event_names(
 	task_name,
 	current_event_name=None,
 ):
-	"""
-	Physically deleting a CRM Task removes all Events
-	ever created for it.
-	"""
+	"""Return all known Event names linked to a CRM Task."""
 
 	event_names = set()
 
@@ -246,7 +253,30 @@ def delete_task_calendar_history(
 
 		event_names.update(historical_events)
 
-	for event_name in event_names:
+	return event_names
+
+
+def delete_task_calendar_history(
+	task_name,
+	current_event_name=None,
+	event_names=None,
+):
+	"""
+	Physically deleting a CRM Task removes all Events ever created for it.
+
+	Event names captured before Task deletion can be supplied because their
+	custom_crm_task_name links are intentionally cleared during on_trash.
+	"""
+
+	all_event_names = set(event_names or [])
+	all_event_names.update(
+		get_task_calendar_event_names(
+			task_name,
+			current_event_name=current_event_name,
+		)
+	)
+
+	for event_name in all_event_names:
 		delete_calendar_event(event_name)
 
 
