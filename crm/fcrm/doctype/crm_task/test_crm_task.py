@@ -336,8 +336,8 @@ class TestCRMTask(FrappeTestCase):
 			],
 		)
 
-	def test_calendar_cleanup_breaks_task_event_link_before_event_delete(self):
-		"""Task deletion clears the reverse Event link before deleting the Event."""
+	def test_calendar_cleanup_breaks_both_links_before_deferred_event_delete(self):
+		"""Task deletion clears both directions and defers Event deletion."""
 		from crm.fcrm.task_calendar_sync import cleanup_task_calendar_events
 
 		task = frappe._dict(
@@ -345,26 +345,72 @@ class TestCRMTask(FrappeTestCase):
 				"doctype": "CRM Task",
 				"name": "TEST-TASK",
 				"custom_calendar_event": "EV-TEST",
+				"flags": frappe._dict(),
 			}
 		)
 
 		with (
+			patch(
+				"crm.fcrm.task_calendar_sync.get_task_calendar_event_names",
+				return_value={"EV-TEST", "EV-HISTORY"},
+			),
 			patch("crm.fcrm.task_calendar_sync.frappe.db.set_value") as set_value,
-			patch("crm.fcrm.task_calendar_sync.delete_task_calendar_history") as delete_history,
+			patch("crm.fcrm.task_calendar_sync.frappe.db.exists", return_value=True),
 		):
 			cleanup_task_calendar_events(task)
 
-		set_value.assert_called_once_with(
+		self.assertIsNone(task.custom_calendar_event)
+		self.assertCountEqual(
+			task.flags.calendar_events_to_delete,
+			["EV-TEST", "EV-HISTORY"],
+		)
+		set_value.assert_any_call(
 			"CRM Task",
 			"TEST-TASK",
 			"custom_calendar_event",
 			None,
 			update_modified=False,
 		)
-		self.assertIsNone(task.custom_calendar_event)
-		delete_history.assert_called_once_with(
-			"TEST-TASK",
-			current_event_name="EV-TEST",
+		set_value.assert_any_call(
+			"Event",
+			"EV-TEST",
+			"custom_crm_task_name",
+			None,
+			update_modified=False,
+		)
+		set_value.assert_any_call(
+			"Event",
+			"EV-HISTORY",
+			"custom_crm_task_name",
+			None,
+			update_modified=False,
+		)
+
+	def test_task_delete_queues_captured_events(self):
+		"""after_delete queues the Event names captured during on_trash."""
+		from crm.fcrm.task_calendar_sync import queue_task_calendar_delete
+
+		task = frappe._dict(
+			{
+				"doctype": "CRM Task",
+				"name": "TEST-TASK",
+				"flags": frappe._dict(
+					{
+						"calendar_events_to_delete": ["EV-TEST", "EV-HISTORY"],
+					}
+				),
+			}
+		)
+
+		with patch("crm.fcrm.task_calendar_sync.frappe.enqueue") as enqueue:
+			queue_task_calendar_delete(task)
+
+		enqueue.assert_called_once_with(
+			"crm.fcrm.task_calendar_sync.delete_task_calendar_history",
+			queue="short",
+			enqueue_after_commit=True,
+			task_name="TEST-TASK",
+			event_names=["EV-TEST", "EV-HISTORY"],
 		)
 
 
