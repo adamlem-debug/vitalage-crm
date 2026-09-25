@@ -295,18 +295,24 @@ class TestCRMTask(FrappeTestCase):
 		)
 
 	def test_task_participants_map_to_event_attendees(self):
-		"""Additional Task participants become Event User participants."""
+		"""Event attendees use the User email, not the User document name."""
 		from crm.fcrm.task_calendar_sync import set_event_participants
+
+		frappe.db.set_value(
+			"User",
+			"Administrator",
+			"email",
+			"administrator@example.com",
+			update_modified=False,
+		)
 
 		task = frappe.get_doc(
 			{
 				"doctype": "CRM Task",
 				"title": "Calendar participants Task",
-				"assigned_to": "Administrator",
+				"assigned_to": "owner@example.com",
 				"participants": [
 					{"user": "Administrator"},
-					{"user": "doctor@example.com"},
-					{"user": "nurse@example.com"},
 				],
 			}
 		)
@@ -324,8 +330,7 @@ class TestCRMTask(FrappeTestCase):
 				for row in event.event_participants
 			],
 			[
-				("User", "doctor@example.com", "doctor@example.com"),
-				("User", "nurse@example.com", "nurse@example.com"),
+				("User", "Administrator", "administrator@example.com"),
 			],
 		)
 
