@@ -1,6 +1,8 @@
 # Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
+from unittest.mock import patch
+
 import frappe
 
 from crm.tests import CRMTestCase as FrappeTestCase
@@ -332,6 +334,38 @@ class TestCRMTask(FrappeTestCase):
 			[
 				("User", "Administrator", "administrator@example.com"),
 			],
+		)
+
+
+	def test_calendar_cleanup_breaks_task_event_link_before_event_delete(self):
+		"""Task deletion clears the reverse Event link before deleting the Event."""
+		from crm.fcrm.task_calendar_sync import cleanup_task_calendar_events
+
+		task = frappe._dict(
+			{
+				"doctype": "CRM Task",
+				"name": "TEST-TASK",
+				"custom_calendar_event": "EV-TEST",
+			}
+		)
+
+		with (
+			patch("crm.fcrm.task_calendar_sync.frappe.db.set_value") as set_value,
+			patch("crm.fcrm.task_calendar_sync.delete_task_calendar_history") as delete_history,
+		):
+			cleanup_task_calendar_events(task)
+
+		set_value.assert_called_once_with(
+			"CRM Task",
+			"TEST-TASK",
+			"custom_calendar_event",
+			None,
+			update_modified=False,
+		)
+		self.assertIsNone(task.custom_calendar_event)
+		delete_history.assert_called_once_with(
+			"TEST-TASK",
+			current_event_name="EV-TEST",
 		)
 
 
