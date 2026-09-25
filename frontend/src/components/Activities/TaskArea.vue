@@ -31,7 +31,10 @@
               </Tooltip>
             </div>
 
-            <div v-if="task.custom_task_type" class="flex items-center justify-center">
+            <div
+              v-if="task.custom_task_type"
+              class="flex items-center justify-center"
+            >
               <DotIcon class="h-2.5 w-2.5 text-ink-gray-5" :radius="2" />
             </div>
 
@@ -52,7 +55,9 @@
 
         <div class="flex items-center gap-1">
           <Dropdown
-            :options="userSelectableTaskStatusOptions(modalRef.updateTaskStatus, task)"
+            :options="
+              userSelectableTaskStatusOptions(modalRef.updateTaskStatus, task)
+            "
           >
             <Button
               :tooltip="__('Change Status')"
@@ -117,9 +122,7 @@ import { usersStore } from '@/stores/users'
 import { globalStore } from '@/stores/global'
 import { Tooltip, Dropdown } from 'frappe-ui'
 
-const TECHNICAL_TASK_STATUSES = new Set([
-  'Removed from Calendar',
-])
+const TECHNICAL_TASK_STATUSES = new Set(['Removed from Calendar'])
 
 defineProps({
   tasks: { type: Array, default: () => [] },
