@@ -183,7 +183,10 @@ doc_events = {
 	},
 	"CRM Task": {
 		"on_update": ["crm.fcrm.task_calendar_sync.queue_task_calendar_sync"],
-		"on_trash": ["crm.fcrm.task_calendar_sync.cleanup_task_notifications"],
+		"on_trash": [
+			"crm.fcrm.task_calendar_sync.cleanup_task_notifications",
+			"crm.fcrm.task_calendar_sync.cleanup_task_calendar_events",
+		],
 		"after_delete": ["crm.fcrm.task_calendar_sync.queue_task_calendar_delete"],
 	},
 	"CRM Deal": {
