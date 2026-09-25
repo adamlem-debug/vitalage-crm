@@ -336,7 +336,6 @@ class TestCRMTask(FrappeTestCase):
 			],
 		)
 
-
 	def test_calendar_cleanup_breaks_task_event_link_before_event_delete(self):
 		"""Task deletion clears the reverse Event link before deleting the Event."""
 		from crm.fcrm.task_calendar_sync import cleanup_task_calendar_events
