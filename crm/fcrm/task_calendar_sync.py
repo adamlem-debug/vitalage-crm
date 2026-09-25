@@ -139,6 +139,18 @@ def get_task_participant_users(task):
 	return users
 
 
+def get_user_email(user):
+	"""
+	Return the email configured on a Frappe User.
+
+	User document names are usually email addresses, but special users such as
+	Administrator are not. Passing a non-email User name to Google Calendar as an
+	attendee can make Event creation fail entirely.
+	"""
+
+	return frappe.db.get_value("User", user, "email")
+
+
 def set_event_participants(event, task):
 	"""
 	Make CRM Task participants the source of truth for Event attendees.
@@ -152,7 +164,7 @@ def set_event_participants(event, task):
 			{
 				"reference_doctype": "User",
 				"reference_docname": user,
-				"email": user,
+				"email": get_user_email(user),
 			},
 		)
 
