@@ -356,6 +356,16 @@ class TestCRMTask(FrappeTestCase):
 			),
 			patch("crm.fcrm.task_calendar_sync.frappe.db.set_value") as set_value,
 			patch("crm.fcrm.task_calendar_sync.frappe.db.exists", return_value=True),
+			patch(
+				"crm.fcrm.task_calendar_sync.frappe.db.get_value",
+				return_value=frappe._dict(
+					{
+						"reference_doctype": "CRM Task",
+						"reference_docname": "TEST-TASK",
+					}
+				),
+			),
+			patch("crm.fcrm.task_calendar_sync.frappe.db.delete") as delete,
 			patch("crm.fcrm.task_calendar_sync.frappe.get_meta") as get_meta,
 		):
 			get_meta.return_value.has_field.return_value = True
@@ -386,6 +396,24 @@ class TestCRMTask(FrappeTestCase):
 			"custom_crm_task_name",
 			None,
 			update_modified=False,
+		)
+		set_value.assert_any_call(
+			"Event",
+			"EV-TEST",
+			{
+				"reference_doctype": None,
+				"reference_docname": None,
+			},
+			update_modified=False,
+		)
+		delete.assert_any_call(
+			"Dynamic Link",
+			{
+				"parenttype": "Event",
+				"parent": "EV-TEST",
+				"link_doctype": "CRM Task",
+				"link_name": "TEST-TASK",
+			},
 		)
 
 	def test_task_delete_queues_captured_events(self):
