@@ -31,13 +31,21 @@
               </Tooltip>
             </div>
 
+            <div v-if="task.custom_task_type" class="flex items-center justify-center">
+              <DotIcon class="h-2.5 w-2.5 text-ink-gray-5" :radius="2" />
+            </div>
+
+            <div v-if="task.custom_task_type">
+              {{ __(task.custom_task_type) }}
+            </div>
+
             <div class="flex items-center justify-center">
               <DotIcon class="h-2.5 w-2.5 text-ink-gray-5" :radius="2" />
             </div>
 
-            <div class="flex gap-2">
-              <TaskPriorityIcon class="!h-2 !w-2" :priority="task.priority" />
-              {{ __(task.priority) }}
+            <div class="flex items-center gap-2">
+              <TaskStatusIcon :status="task.status" />
+              {{ __(task.status) }}
             </div>
           </div>
         </div>
@@ -102,7 +110,6 @@
 <script setup>
 import CalendarIcon from '@/components/Icons/CalendarIcon.vue'
 import TaskStatusIcon from '@/components/Icons/TaskStatusIcon.vue'
-import TaskPriorityIcon from '@/components/Icons/TaskPriorityIcon.vue'
 import DotIcon from '@/components/Icons/DotIcon.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { formatDate, taskStatusOptions } from '@/utils'
