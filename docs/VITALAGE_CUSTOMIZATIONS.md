@@ -430,19 +430,26 @@ Related schema/site fields:
 
 Task -> Event -> Google Calendar sync is intentionally limited to selected Task Types.
 
-Current configured/expected calendar-enabled Task Types:
+Current production calendar-enabled Task Types (verified in **VitalAge CRM Settings** on 2026-09-25):
 
 - Consultation
-- Nutritional consultation
+- Nutrition consultation
+- Concierge
 - Sample collection
 - Therapy
-- Concierge
+- Other consultation
+- Discovery call
 
 Other Task Types do not create/sync Frappe Events or Google Calendar events.
 
 The list is **configuration-driven**, not hardcoded in `task_calendar_sync.py`. It is read from the `calendar_task_types` child table in **VitalAge CRM Settings** by `get_calendar_settings()`.
 
-This means the enabled list can be changed administratively without changing Python code. If the site configuration is changed, this document should be updated at the same time.
+Current related production settings:
+
+- Calendar Cancellation Statuses: **Canceled**
+- External Calendar Removal Status: **Removed from Calendar**
+
+This means the enabled Task Type list and calendar status behavior can be changed administratively without changing Python code. If the site configuration is changed, this document should be updated at the same time.
 
 ## 8.2 Lifecycle
 
