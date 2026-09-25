@@ -50,14 +50,29 @@ def cleanup_task_calendar_events(doc, method=None):
 	"""
 	Delete Events linked to a CRM Task before Frappe performs link validation.
 
-	Event.custom_crm_task_name links back to CRM Task, so waiting until
-	after_delete is too late: Frappe correctly refuses to delete a Task that is
-	still referenced by an Event.
+	CRM Task and Event link to each other:
+	- CRM Task.custom_calendar_event -> Event
+	- Event.custom_crm_task_name -> CRM Task
+
+	Clear the Task -> Event link first so Frappe allows the Event to be deleted,
+	then remove the Event(s) so Frappe can proceed with deleting the Task.
 	"""
+
+	current_event_name = doc.get("custom_calendar_event")
+
+	if current_event_name:
+		frappe.db.set_value(
+			doc.doctype,
+			doc.name,
+			"custom_calendar_event",
+			None,
+			update_modified=False,
+		)
+		doc.custom_calendar_event = None
 
 	delete_task_calendar_history(
 		str(doc.name),
-		current_event_name=doc.get("custom_calendar_event"),
+		current_event_name=current_event_name,
 	)
 
 
