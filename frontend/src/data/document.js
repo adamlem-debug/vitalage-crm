@@ -10,6 +10,7 @@ import { ref, reactive, getCurrentInstance } from 'vue'
 
 const documentsCache = {}
 const controllersCache = {}
+const controllerSetupPromises = {}
 const assigneesCache = {}
 const permissionsCache = {}
 
@@ -146,50 +147,65 @@ export function useDocument(doctype, docname, resourceOverrides = {}) {
   }
 
   async function setupFormScript() {
-    if (
-      controllersCache[doctype] &&
-      typeof controllersCache[doctype][docname || ''] === 'object'
-    ) {
-      return
+    const key = docname || ''
+
+    controllersCache[doctype] = controllersCache[doctype] || {}
+    controllerSetupPromises[doctype] = controllerSetupPromises[doctype] || {}
+
+    if (Object.hasOwn(controllersCache[doctype], key)) {
+      return false
     }
 
-    if (!controllersCache[doctype]) {
-      controllersCache[doctype] = {}
+    if (controllerSetupPromises[doctype][key]) {
+      await controllerSetupPromises[doctype][key]
+      return true
     }
 
-    controllersCache[doctype][docname || ''] = {}
+    controllerSetupPromises[doctype][key] = (async () => {
+      const { makeCall } = globalStore()
 
-    const { makeCall } = globalStore()
+      let helpers = {}
 
-    let helpers = {}
-
-    helpers.crm = {
-      makePhoneCall: makeCall,
-      openSettings: (page) => {
-        showSettings.value = true
-        activeSettingsPage.value = page
-      },
-    }
-
-    const controllersArray = await setupScript(
-      documentsCache[doctype][docname || ''],
-      helpers,
-    )
-
-    if (!controllersArray || controllersArray.length === 0) return
-
-    const organizedControllers = {}
-    for (const controller of controllersArray) {
-      const controllerKey = controller._className || controller.constructor.name
-      if (!organizedControllers[controllerKey]) {
-        organizedControllers[controllerKey] = []
+      helpers.crm = {
+        makePhoneCall: makeCall,
+        openSettings: (page) => {
+          showSettings.value = true
+          activeSettingsPage.value = page
+        },
       }
-      organizedControllers[controllerKey].push(controller)
-    }
-    controllersCache[doctype][docname || ''] = organizedControllers
 
-    triggerOnLoad()
-    triggerOnRender()
+      const controllersArray = await setupScript(
+        documentsCache[doctype][key],
+        helpers,
+      )
+
+      const organizedControllers = {}
+
+      if (controllersArray?.length) {
+        for (const controller of controllersArray) {
+          const controllerKey =
+            controller._className || controller.constructor.name
+          if (!organizedControllers[controllerKey]) {
+            organizedControllers[controllerKey] = []
+          }
+          organizedControllers[controllerKey].push(controller)
+        }
+      }
+
+      controllersCache[doctype][key] = organizedControllers
+
+      if (controllersArray?.length) {
+        await triggerOnLoad()
+        await triggerOnRender()
+      }
+    })()
+
+    try {
+      await controllerSetupPromises[doctype][key]
+      return true
+    } finally {
+      delete controllerSetupPromises[doctype][key]
+    }
   }
 
   function getControllers(row = null) {
