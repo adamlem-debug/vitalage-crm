@@ -356,7 +356,9 @@ class TestCRMTask(FrappeTestCase):
 			),
 			patch("crm.fcrm.task_calendar_sync.frappe.db.set_value") as set_value,
 			patch("crm.fcrm.task_calendar_sync.frappe.db.exists", return_value=True),
+			patch("crm.fcrm.task_calendar_sync.frappe.get_meta") as get_meta,
 		):
+			get_meta.return_value.has_field.return_value = True
 			cleanup_task_calendar_events(task)
 
 		self.assertIsNone(task.custom_calendar_event)
