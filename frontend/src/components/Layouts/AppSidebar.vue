@@ -166,6 +166,7 @@ import PinIcon from '@/components/Icons/PinIcon.vue'
 import UserDropdown from '@/components/UserDropdown.vue'
 import SquareAsterisk from '@/components/Icons/SquareAsterisk.vue'
 import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
+import WebsiteIcon from '@/components/Icons/WebsiteIcon.vue'
 import DealsIcon from '@/components/Icons/DealsIcon.vue'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
 import OrganizationsIcon from '@/components/Icons/OrganizationsIcon.vue'
@@ -333,16 +334,68 @@ const { user } = sessionStore()
 const { users, isManager } = usersStore()
 const { isOnboardingStepsCompleted, setUp } = useOnboarding('frappecrm')
 
+// Keep saved onboarding progress aligned when upstream adds new steps.
+const ONBOARDING_KEY = 'frappecrm_onboarding_status'
+
+async function reconcileOnboarding(currentSteps) {
+  let store
+  try {
+    store = JSON.parse(localStorage.getItem('onboardingStatus') || '{}')
+  } catch {
+    return
+  }
+  const persisted = store?.[user]?.[ONBOARDING_KEY]
+  if (!persisted?.length || persisted.every((s) => s.completed)) return
+
+  const doneByName = new Map(persisted.map((s) => [s.name, s.completed]))
+  const currentNames = new Set(currentSteps.map((s) => s.name))
+  const visible = currentSteps.map((s) => ({
+    name: s.name,
+    completed: doneByName.get(s.name) ?? false,
+  }))
+  const hidden = persisted.filter((s) => !currentNames.has(s.name))
+  const merged = [...visible, ...hidden]
+
+  const unchanged =
+    merged.length === persisted.length &&
+    merged.every(
+      (m, i) =>
+        persisted[i]?.name === m.name &&
+        persisted[i]?.completed === m.completed,
+    )
+  if (unchanged) return
+
+  store[user][ONBOARDING_KEY] = merged
+  try {
+    localStorage.setItem('onboardingStatus', JSON.stringify(store))
+    await call('frappe.onboarding.update_user_onboarding_status', {
+      steps: JSON.stringify(merged),
+      appName: 'frappecrm',
+    })
+  } catch {
+    return
+  }
+  window.location.reload()
+}
+
 async function getFirstLead() {
-  let firstLead = localStorage.getItem('firstLead' + user)
-  if (firstLead) return firstLead
-  return await call('crm.api.onboarding.get_first_lead')
+  return await getFirstRecord('firstLead', 'crm.api.onboarding.get_first_lead')
 }
 
 async function getFirstDeal() {
-  let firstDeal = localStorage.getItem('firstDeal' + user)
-  if (firstDeal) return firstDeal
-  return await call('crm.api.onboarding.get_first_deal')
+  return await getFirstRecord('firstDeal', 'crm.api.onboarding.get_first_deal')
+}
+
+async function getFirstRecord(key, method) {
+  let storageKey = key + user
+  let cached = localStorage.getItem(storageKey)
+  let name = await call(method, { name: cached })
+  if (name) {
+    localStorage.setItem(storageKey, name)
+  } else {
+    localStorage.removeItem(storageKey)
+  }
+  return name
 }
 
 const showIntermediateModal = ref(false)
@@ -371,6 +424,19 @@ const steps = reactive([
       send('trigger_lead_create', true)
       capture('onboarding_step_clicked_create_first_lead')
     },
+  },
+  {
+    name: 'create_first_web_form',
+    title: __('Capture leads with a form'),
+    icon: markRaw(WebsiteIcon),
+    completed: false,
+    onClick: () => {
+      minimize.value = true
+      showSettings.value = true
+      activeSettingsPage.value = 'Forms'
+      capture('onboarding_step_clicked_create_first_web_form')
+    },
+    condition: () => isManager(),
   },
   {
     name: 'invite_your_team',
@@ -544,6 +610,7 @@ onMounted(async () => {
     return true
   })
 
+  await reconcileOnboarding(filteredSteps)
   setUp(filteredSteps)
 })
 

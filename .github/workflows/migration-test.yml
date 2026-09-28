@@ -49,7 +49,7 @@ jobs:
               run: |
                   # Stable lanes run on frappe version-15; develop tracks frappe develop.
                   case "$BASE_BRANCH" in
-                      main|main-hotfix) echo "branch=version-15" >> "$GITHUB_OUTPUT" ;;
+                      main|main-hotfix|vitalage-main) echo "branch=version-15" >> "$GITHUB_OUTPUT" ;;
                       *)                echo "branch=develop"    >> "$GITHUB_OUTPUT" ;;
                   esac
 

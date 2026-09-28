@@ -1,6 +1,8 @@
 # Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
+from unittest.mock import patch
+
 import frappe
 
 from crm.tests import CRMTestCase as FrappeTestCase
@@ -220,6 +222,226 @@ class TestCRMTask(FrappeTestCase):
 		assignees_after = task.get_assigned_users()
 		self.assertEqual(len(assignees_after), initial_count)
 		self.assertIn("Administrator", assignees_after)
+
+	def test_task_participants_are_additional_assignees(self):
+		"""Primary assignee and Participants are all assigned to the Task."""
+		for email, first_name in [
+			("participant.one@example.com", "Participant One"),
+			("participant.two@example.com", "Participant Two"),
+		]:
+			if not frappe.db.exists("User", email):
+				frappe.get_doc(
+					{
+						"doctype": "User",
+						"email": email,
+						"first_name": first_name,
+					}
+				).insert()
+
+		task = create_test_task(
+			title="Multi-assignee Task",
+			assigned_to="Administrator",
+			participants=[
+				{"user": "participant.one@example.com"},
+				{"user": "participant.two@example.com"},
+			],
+		)
+
+		self.assertEqual(
+			task.get_assigned_users(),
+			{
+				"Administrator",
+				"participant.one@example.com",
+				"participant.two@example.com",
+			},
+		)
+
+	def test_removed_task_participant_is_unassigned(self):
+		"""Removing a Participant removes only that user's Task assignment."""
+		for email, first_name in [
+			("participant.keep@example.com", "Participant Keep"),
+			("participant.remove@example.com", "Participant Remove"),
+		]:
+			if not frappe.db.exists("User", email):
+				frappe.get_doc(
+					{
+						"doctype": "User",
+						"email": email,
+						"first_name": first_name,
+					}
+				).insert()
+
+		task = create_test_task(
+			title="Participant removal Task",
+			assigned_to="Administrator",
+			participants=[
+				{"user": "participant.keep@example.com"},
+				{"user": "participant.remove@example.com"},
+			],
+		)
+		task.reload()
+
+		task.set(
+			"participants",
+			[{"user": "participant.keep@example.com"}],
+		)
+		task.save()
+		task.reload()
+
+		self.assertEqual(
+			task.get_assigned_users(),
+			{
+				"Administrator",
+				"participant.keep@example.com",
+			},
+		)
+
+	def test_task_participants_map_to_event_attendees(self):
+		"""Event attendees use the User email, not the User document name."""
+		from crm.fcrm.task_calendar_sync import set_event_participants
+
+		frappe.db.set_value(
+			"User",
+			"Administrator",
+			"email",
+			"administrator@example.com",
+			update_modified=False,
+		)
+
+		task = frappe.get_doc(
+			{
+				"doctype": "CRM Task",
+				"title": "Calendar participants Task",
+				"assigned_to": "owner@example.com",
+				"participants": [
+					{"user": "Administrator"},
+				],
+			}
+		)
+		event = frappe.new_doc("Event")
+
+		set_event_participants(event, task)
+
+		self.assertEqual(
+			[
+				(
+					row.reference_doctype,
+					row.reference_docname,
+					row.email,
+				)
+				for row in event.event_participants
+			],
+			[
+				("User", "Administrator", "administrator@example.com"),
+			],
+		)
+
+	def test_calendar_cleanup_breaks_both_links_before_deferred_event_delete(self):
+		"""Task deletion clears both directions and defers Event deletion."""
+		from crm.fcrm.task_calendar_sync import cleanup_task_calendar_events
+
+		task = frappe._dict(
+			{
+				"doctype": "CRM Task",
+				"name": "TEST-TASK",
+				"custom_calendar_event": "EV-TEST",
+				"flags": frappe._dict(),
+			}
+		)
+
+		with (
+			patch(
+				"crm.fcrm.task_calendar_sync.get_task_calendar_event_names",
+				return_value={"EV-TEST", "EV-HISTORY"},
+			),
+			patch("crm.fcrm.task_calendar_sync.frappe.db.set_value") as set_value,
+			patch("crm.fcrm.task_calendar_sync.frappe.db.exists", return_value=True),
+			patch(
+				"crm.fcrm.task_calendar_sync.frappe.db.get_value",
+				return_value=frappe._dict(
+					{
+						"reference_doctype": "CRM Task",
+						"reference_docname": "TEST-TASK",
+					}
+				),
+			),
+			patch("crm.fcrm.task_calendar_sync.frappe.db.delete") as delete,
+			patch("crm.fcrm.task_calendar_sync.frappe.get_meta") as get_meta,
+		):
+			get_meta.return_value.has_field.return_value = True
+			cleanup_task_calendar_events(task)
+
+		self.assertIsNone(task.custom_calendar_event)
+		self.assertCountEqual(
+			task.flags.calendar_events_to_delete,
+			["EV-TEST", "EV-HISTORY"],
+		)
+		set_value.assert_any_call(
+			"CRM Task",
+			"TEST-TASK",
+			"custom_calendar_event",
+			None,
+			update_modified=False,
+		)
+		set_value.assert_any_call(
+			"Event",
+			"EV-TEST",
+			"custom_crm_task_name",
+			None,
+			update_modified=False,
+		)
+		set_value.assert_any_call(
+			"Event",
+			"EV-HISTORY",
+			"custom_crm_task_name",
+			None,
+			update_modified=False,
+		)
+		set_value.assert_any_call(
+			"Event",
+			"EV-TEST",
+			{
+				"reference_doctype": None,
+				"reference_docname": None,
+			},
+			update_modified=False,
+		)
+		delete.assert_any_call(
+			"Dynamic Link",
+			{
+				"parenttype": "Event",
+				"parent": "EV-TEST",
+				"link_doctype": "CRM Task",
+				"link_name": "TEST-TASK",
+			},
+		)
+
+	def test_task_delete_queues_captured_events(self):
+		"""after_delete queues the Event names captured during on_trash."""
+		from crm.fcrm.task_calendar_sync import queue_task_calendar_delete
+
+		task = frappe._dict(
+			{
+				"doctype": "CRM Task",
+				"name": "TEST-TASK",
+				"flags": frappe._dict(
+					{
+						"calendar_events_to_delete": ["EV-TEST", "EV-HISTORY"],
+					}
+				),
+			}
+		)
+
+		with patch("crm.fcrm.task_calendar_sync.frappe.enqueue") as enqueue:
+			queue_task_calendar_delete(task)
+
+		enqueue.assert_called_once_with(
+			"crm.fcrm.task_calendar_sync.delete_task_calendar_history",
+			queue="short",
+			enqueue_after_commit=True,
+			task_name="TEST-TASK",
+			event_names=["EV-TEST", "EV-HISTORY"],
+		)
 
 
 def create_test_task(**kwargs):

@@ -4,7 +4,7 @@
 <script setup>
 import { useDoctypeModal } from '@/composables/doctypeModal'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
-import { call } from 'frappe-ui'
+import { call, toast } from 'frappe-ui'
 import { useRoute, useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -36,11 +36,16 @@ function showTask(task) {
 }
 
 async function deleteTask(name) {
-  await call('frappe.client.delete', {
-    doctype: 'CRM Task',
-    name,
-  })
-  activities.value.reload()
+  try {
+    await call('frappe.client.delete', {
+      doctype: 'CRM Task',
+      name,
+    })
+    activities.value.reload()
+  } catch (error) {
+    toast.error(error.messages?.[0] || __('Could not delete task'))
+    throw error
+  }
 }
 
 function updateTaskStatus(status, task) {
