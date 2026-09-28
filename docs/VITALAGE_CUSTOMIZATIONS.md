@@ -82,6 +82,104 @@ Task Type is site-configured through the custom `custom_task_type` field and for
 
 ---
 
+
+## 3.4 External Lead creation REST API
+
+VitalAge accepts externally created Leads through Frappe's **standard REST resource API** for the `CRM Lead` DocType.
+
+This is **not** a custom VitalAge Server Script or a dedicated Python endpoint, so there is no separate endpoint definition to find in the Server Script list.
+
+### Endpoint
+
+Production site:
+
+```text
+POST https://vitalageclinic.frappe.cloud/api/resource/CRM%20Lead
+```
+
+Equivalent Frappe resource path:
+
+```text
+POST /api/resource/CRM%20Lead
+```
+
+### Authentication
+
+Use Frappe token authentication for a dedicated/integration User that has permission to create `CRM Lead` records:
+
+```http
+Authorization: token <API_KEY>:<API_SECRET>
+Content-Type: application/json
+```
+
+The API key/secret are **site credentials and must not be committed to Git**.
+
+Operationally, the integration User and its roles/API key are managed on the Frappe site. The API secret is only shown when generated/reset and should be stored in the calling system's secret store.
+
+### Request body
+
+The request body uses ordinary `CRM Lead` fieldnames.
+
+Example:
+
+```json
+{
+  "first_name": "Jan",
+  "last_name": "Novák",
+  "email": "jan.novak@example.com",
+  "mobile_no": "+420123456789",
+  "source": "Website"
+}
+```
+
+Relevant standard fields include:
+
+- `first_name`
+- `last_name`
+- `email`
+- `mobile_no`
+- `phone`
+- `organization`
+- `source`
+- `lead_owner`
+- `job_title`
+- `territory`
+- `industry`
+
+Site-level Custom Fields on `CRM Lead` can also be supplied by their actual fieldname when the integration User has permission to write them.
+
+### Validation / creation behavior
+
+Source files:
+
+- `crm/fcrm/doctype/crm_lead/crm_lead.json`
+- `crm/fcrm/doctype/crm_lead/crm_lead.py`
+
+Important behavior:
+
+- `first_name` is mandatory in the committed `CRM Lead` schema.
+- If `status` is omitted on a new Lead, CRM Lead validation assigns **New** when that status exists; otherwise it uses the first open Lead status.
+- `lead_name` is derived from the person's name. If needed by other creation paths, CRM can also derive a Lead name from organization/email.
+- email format is validated when `email` is supplied.
+- Lead Owner cannot be the same address as the Lead email.
+- the Lead naming series is generated automatically.
+- normal Frappe DocType permissions apply to the API User.
+
+The standard Frappe resource API returns the created document in the normal REST response under `data`.
+
+### Where to inspect this integration
+
+Because the endpoint is generated automatically by Frappe, its configuration is split between code and site data:
+
+1. **REST route:** standard Frappe `/api/resource/<DocType>` behavior.
+2. **Lead schema:** `crm/fcrm/doctype/crm_lead/crm_lead.json`.
+3. **Lead validation/hooks:** `crm/fcrm/doctype/crm_lead/crm_lead.py`.
+4. **Authentication and permissions:** the integration User on the Frappe site, including its roles and API key.
+5. **Site-specific Lead Custom Fields:** Customize Form / Custom Field records on the active site.
+
+If this integration is changed to a custom whitelisted method or Server Script API in the future, document the exact method name, authentication contract, payload, validation, and response here and add the implementation to source control where possible.
+
+
 # 4. Client case / CRM Deal customizations
 
 ## 4.1 Deal renamed to Client case
