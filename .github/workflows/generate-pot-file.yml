@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branch: ["develop"]
+        branch: ["vitalage-main"]
     permissions:
       contents: write
 
