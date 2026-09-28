@@ -1,11 +1,9 @@
 name: Build Container Image
+# Disabled from automatic pushes/tags in the VitalAge fork.
+# This inherited workflow still builds upstream frappe/crm and must be
+# adapted to adamlem-debug/vitalage-crm before it is used for deployment.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    tags:
-      - "*"
 
 jobs:
   build:
