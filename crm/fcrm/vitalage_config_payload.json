@@ -3091,7 +3091,7 @@
       "fetch_if_empty": 0,
       "collapsible": 0,
       "collapsible_depends_on": null,
-      "default": "Czechia",
+      "default": "Czech Republic",
       "depends_on": null,
       "mandatory_depends_on": null,
       "read_only_depends_on": null,
