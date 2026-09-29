@@ -1,6 +1,7 @@
 import base64
 import json
 import zlib
+from importlib import resources
 
 import frappe
 
@@ -76,9 +77,8 @@ def apply_vitalage_site_config():
 
 
 def _load_payload():
-	path = frappe.get_app_path("crm", "fcrm", "vitalage_config_payload.json")
-	with open(path, encoding="utf-8") as source:
-		return json.load(source)
+	payload = resources.files("crm.fcrm").joinpath("vitalage_config_payload.json").read_text(encoding="utf-8")
+	return json.loads(payload)
 
 
 def _install_missing_records(payload):
