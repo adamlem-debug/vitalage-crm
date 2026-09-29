@@ -4,6 +4,7 @@ import zlib
 from importlib import resources
 
 import frappe
+from frappe import _
 
 from crm.fcrm.doctype.crm_view_settings.crm_view_settings import (
 	get_route_name,
@@ -162,7 +163,7 @@ def _apply_vitalage_custom_field_overrides():
 		return
 
 	if not frappe.db.exists("Country", "Czech Republic"):
-		frappe.throw('Required Country master "Czech Republic" is missing')
+		frappe.throw(_('Required Country master "Czech Republic" is missing'))
 
 	if frappe.db.get_value("Custom Field", name, "default") != "Czech Republic":
 		frappe.db.set_value("Custom Field", name, "default", "Czech Republic", update_modified=False)
