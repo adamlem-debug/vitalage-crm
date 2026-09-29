@@ -78,7 +78,7 @@ def apply_vitalage_site_config():
 
 
 def _load_payload():
-	raw = zlib.decompress(base64.b64decode(CONFIG_PAYLOAD_B64))
+	raw = zlib.decompress(base64.b64decode(_pad_base64(CONFIG_PAYLOAD_B64)))
 	return json.loads(raw.decode("utf-8"))
 
 
@@ -170,8 +170,12 @@ CUSTOM_PERMISSION_FIELDS = (
 )
 
 
+def _pad_base64(encoded):
+	return encoded + ("=" * (-len(encoded) % 4))
+
+
 def _decode_bundle(encoded):
-	return json.loads(zlib.decompress(base64.b64decode(encoded)).decode("utf-8"))
+	return json.loads(zlib.decompress(base64.b64decode(_pad_base64(encoded))).decode("utf-8"))
 
 
 def _apply_additional_property_setters():
