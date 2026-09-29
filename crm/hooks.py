@@ -27,6 +27,90 @@ get_site_info = "crm.activation.get_site_info"
 export_python_type_annotations = True
 require_type_annotated_api_methods = True
 
+
+# VitalAge configuration-as-code fixtures.
+# Keep credentials, user-specific views, and business data out of fixtures.
+fixtures = [
+	{
+		"dt": "Role",
+		"filters": [
+			["name", "in", ["VitalAge Admin Master", "VitalAge Health Coordinator", "VitalAge Nurse", "VitalAge Nutrition Specialist", "VitalAge Physician", "VitalAge User Manager"]],
+		],
+	},
+	{
+		"dt": "Role Profile",
+		"filters": [
+			["name", "in", ["VitalAge Admin Master", "VitalAge Health Coordinator", "VitalAge Nurse", "VitalAge Nutrition Specialist", "VitalAge Physician"]],
+		],
+	},
+	{
+		"dt": "DocType",
+		"filters": [
+			["name", "in", ["CRM Care Plan Item", "FCRM Calendar Cancellation Status", "FCRM Calendar Task Type", "VitalAge CRM Settings"]],
+		],
+	},
+	{
+		"dt": "Custom Field",
+		"filters": [
+			["name", "in", ["Contact-is_billing_contact", "CRM Deal-erpnext_customer", "CRM Deal-custom_payment_signal", "CRM Deal-custom_membership_start_date", "CRM Deal-custom_membership_end_date", "CRM Deal-custom_invoice_issued", "CRM Deal-custom_invoice_paid", "CRM Deal-custom_consultation_scheduled", "CRM Deal-custom_nutrition", "CRM Deal-custom_membership_type", "CRM Deal-custom_extra_consultations_paid", "CRM Deal-custom_consultations_included", "CRM Deal-custom_consultations_used", "CRM Deal-custom_consultations_remaining", "CRM Deal-custom_concierge_included", "CRM Deal-custom_concierge_used", "CRM Deal-custom_concierge_remaining", "CRM Deal-custom_concierge", "CRM Deal-custom_extra_concierge_paid", "CRM Deal-custom_nutrition_specialist", "CRM Deal-custom_care_plan", "CRM Deal-custom_client_full_name", "CRM Lead-custom_contact", "CRM Lead-custom_source_detail", "CRM Lead-custom_description", "CRM Lead-custom_company_id", "CRM Lead-custom_tax_id", "CRM Lead-custom_street_and_number", "CRM Lead-custom_city", "CRM Lead-custom_postal_code", "CRM Lead-custom_country", "CRM Lead-custom_channel", "CRM Task-custom_task_type", "CRM Task-custom_client_email", "CRM Task-custom_duration", "CRM Task-custom_calendar_event", "Event-custom_crm_task_name", "FCRM Note-custom_type"]],
+		],
+	},
+	{
+		"dt": "Property Setter",
+		"filters": [
+			["name", "in", ["Contact-main-search_fields", "CRM Deal-annual_revenue-permlevel", "CRM Deal-first_name-reqd", "CRM Deal-last_name-reqd", "CRM Deal-main-default_view", "CRM Deal-main-field_order", "CRM Deal-main-search_fields", "CRM Deal-main-show_name_in_global_search", "CRM Deal-main-title_field", "CRM Deal-status-permlevel", "CRM Lead-annual_revenue-permlevel", "CRM Lead-last_name-reqd", "CRM Lead-main-field_order", "CRM Lead-main-search_fields", "CRM Task-assigned_to-reqd", "CRM Task-due_date-reqd", "CRM Task-main-field_order", "CRM Task-status-default", "CRM Task-status-reqd", "Event-main-field_order", "FCRM Note-main-field_order"]],
+		],
+	},
+	{
+		"dt": "Custom DocPerm",
+		"filters": [
+			["role", "in", ["VitalAge Admin Master", "VitalAge Health Coordinator", "VitalAge Nurse", "VitalAge Nutrition Specialist", "VitalAge Physician", "VitalAge User Manager"]],
+		],
+	},
+	{
+		"dt": "Server Script",
+		"filters": [
+			["name", "in", ["Populate custom_client_full_name", "Admin role assignment restriction", "Care Plan End Date Reminders", "CRM Deal - Sync Task Client Email", "Refresh membership allocations", "CRM Deal - Consultation allocation", "CRM Deal - Consultation recalculation", "CRM Task - Consultation recalculation after delete", "CRM Task - Consultation validation and recalculation", "Daily notifications at 06:00", "Convert Lead to Customer"]],
+		],
+	},
+	{
+		"dt": "CRM Form Script",
+		"filters": [
+			["name", "in", ["Product Details Script for CRM Deal", "Product Details Script for CRM Lead", "Filter Task Types by Reference", "Highlight Lead Owner", "Convert Lead to Customer", "Hide Convert to Deal button", "Show Related Leads on Contact", "Forecasting Script", "Create Quotation from CRM Deal"]],
+		],
+	},
+	{
+		"dt": "CRM Fields Layout",
+		"filters": [
+			["name", "in", ["CRM Deal-Data Fields", "CRM Lead-Data Fields", "Contact-Side Panel", "CRM Deal-Side Panel", "CRM Lead-Side Panel", "CRM Task-Quick Entry", "FCRM Note-Quick Entry", "Contact-Quick Entry", "CRM Deal-Quick Entry", "CRM Lead-Quick Entry"]],
+		],
+	},
+	{
+		"dt": "CRM Deal Status",
+		"filters": [
+			["name", "in", ["Lost", "Inactive", "No Membership", "Couples Plan", "Management", "Monitoring"]],
+		],
+	},
+	{
+		"dt": "CRM Lead Status",
+		"filters": [
+			["name", "in", ["No Response", "Junk", "Unqualified", "Converted", "Qualified", "Nurture", "Contacted", "New"]],
+		],
+	},
+	{
+		"dt": "CRM Lead Source",
+		"filters": [
+			["name", "in", ["Other", "Social media", "AI or search", "Advertising", "Magazine", "Podcast", "Partner referral", "Client referral", "Website"]],
+		],
+	},
+	{
+		"dt": "VitalAge CRM Settings",
+		"filters": [
+			["name", "in", ["VitalAge CRM Settings"]],
+		],
+	},
+]
+
 # Includes in <head>
 # ------------------
 
@@ -318,6 +402,7 @@ ignore_links_on_delete = ["Failed Lead Sync Log"]
 # ]
 
 after_migrate = [
+	"crm.fcrm.vitalage_config.apply_vitalage_site_config",
 	"crm.fcrm.doctype.fcrm_settings.fcrm_settings.after_migrate",
 	"crm.api.whatsapp.add_roles",
 	"crm.install.add_default_scripts",
