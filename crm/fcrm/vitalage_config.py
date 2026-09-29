@@ -24,6 +24,33 @@ SAFE_FCRM_SETTINGS = {
 	"brand_name": "Vital Age Clinic",
 }
 
+
+STOCK_CRM_MASTER_RECORDS = {
+	"CRM Deal Status": (
+		"Demo/Making",
+		"Negotiation",
+		"Proposal/Quotation",
+		"Qualification",
+		"Ready to Close",
+		"Won",
+	),
+	"CRM Lead Source": (
+		"Advertisement",
+		"Campaign",
+		"Cold Calling",
+		"Customer's Vendor",
+		"Email",
+		"Exhibition",
+		"Existing Customer",
+		"Facebook",
+		"Mass Mailing",
+		"Reference",
+		"Supplier Reference",
+		"Walk In",
+		"Web Form",
+	),
+}
+
 DEFAULT_VIEWS = (
 	{
 		"doctype": "CRM Lead",
@@ -65,6 +92,7 @@ def apply_vitalage_site_config():
 	"""Bootstrap VitalAge database configuration without business data or secrets."""
 	payload = _load_payload()
 	_install_missing_records(payload)
+	_remove_stock_crm_master_records()
 	_apply_additional_property_setters()
 	_apply_custom_docperms()
 	_apply_vitalage_crm_settings(payload)
@@ -100,6 +128,22 @@ def _install_missing_records(payload):
 			if frappe.db.exists(doctype, name):
 				continue
 			frappe.get_doc(data).insert(ignore_permissions=True)
+
+
+def _remove_stock_crm_master_records():
+	"""Remove only the stock CRM masters replaced by the VitalAge configuration."""
+	for doctype, names in STOCK_CRM_MASTER_RECORDS.items():
+		if not frappe.db.exists("DocType", doctype):
+			continue
+
+		for name in names:
+			if not frappe.db.exists(doctype, name):
+				continue
+
+			# Do not force deletion. If a supposedly clean target site already links
+			# business data to a stock master, migration should stop for review rather
+			# than silently rewriting or deleting that business data.
+			frappe.delete_doc(doctype, name, ignore_permissions=True)
 
 
 def _apply_vitalage_crm_settings(payload):
