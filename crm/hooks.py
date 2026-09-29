@@ -35,13 +35,34 @@ fixtures = [
 	{
 		"dt": "Role",
 		"filters": [
-			["name", "in", ["VitalAge Admin Master", "VitalAge Health Coordinator", "VitalAge Nurse", "VitalAge Nutrition Specialist", "VitalAge Physician", "VitalAge User Manager"]],
+			[
+				"name",
+				"in",
+				[
+					"VitalAge Admin Master",
+					"VitalAge Health Coordinator",
+					"VitalAge Nurse",
+					"VitalAge Nutrition Specialist",
+					"VitalAge Physician",
+					"VitalAge User Manager",
+				],
+			],
 		],
 	},
 	{
 		"dt": "Role Profile",
 		"filters": [
-			["name", "in", ["VitalAge Admin Master", "VitalAge Health Coordinator", "VitalAge Nurse", "VitalAge Nutrition Specialist", "VitalAge Physician"]],
+			[
+				"name",
+				"in",
+				[
+					"VitalAge Admin Master",
+					"VitalAge Health Coordinator",
+					"VitalAge Nurse",
+					"VitalAge Nutrition Specialist",
+					"VitalAge Physician",
+				],
+			],
 		],
 	},
 	{
@@ -53,13 +74,40 @@ fixtures = [
 	{
 		"dt": "CRM Lead Status",
 		"filters": [
-			["name", "in", ["No Response", "Junk", "Unqualified", "Converted", "Qualified", "Nurture", "Contacted", "New"]],
+			[
+				"name",
+				"in",
+				[
+					"No Response",
+					"Junk",
+					"Unqualified",
+					"Converted",
+					"Qualified",
+					"Nurture",
+					"Contacted",
+					"New",
+				],
+			],
 		],
 	},
 	{
 		"dt": "CRM Lead Source",
 		"filters": [
-			["name", "in", ["Other", "Social media", "AI or search", "Advertising", "Magazine", "Podcast", "Partner referral", "Client referral", "Website"]],
+			[
+				"name",
+				"in",
+				[
+					"Other",
+					"Social media",
+					"AI or search",
+					"Advertising",
+					"Magazine",
+					"Podcast",
+					"Partner referral",
+					"Client referral",
+					"Website",
+				],
+			],
 		],
 	},
 ]
