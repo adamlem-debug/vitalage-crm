@@ -82,6 +82,107 @@ Task Type is site-configured through the custom `custom_task_type` field and for
 
 ---
 
+
+## 3.4 External Lead creation REST API
+
+VitalAge accepts externally created Leads through Frappe's **standard REST resource API** for the `CRM Lead` DocType.
+
+This is **not** a custom VitalAge Server Script or a dedicated Python endpoint, so there is no separate endpoint definition to find in the Server Script list.
+
+### Endpoint
+
+Current DEV endpoint:
+
+```text
+POST https://vitalageclinic.frappe.cloud/api/resource/CRM%20Lead
+```
+
+Equivalent Frappe resource path:
+
+```text
+POST /api/resource/CRM%20Lead
+```
+
+### Authentication
+
+Use Frappe token authentication:
+
+```http
+Authorization: token <API_KEY>:<API_SECRET>
+Content-Type: application/json
+```
+
+Current DEV integration credentials are configured on the Frappe User used by Adam for administration/testing.
+
+**Do not commit the API key or API secret to Git.** The API secret is supplied out-of-band to the calling system and should be stored in its secret store.
+
+Security note:
+
+> The current DEV integration uses an administrative user. Before production cutover, prefer a dedicated integration User with only the roles/permissions required to create CRM Leads.
+
+### Current DEV request contract
+
+The web integration was instructed to send:
+
+```json
+{
+  "lead_name": "Postman TEST3",
+  "first_name": "Postman",
+  "last_name": "TEST3",
+  "email": "postman_test_v3@vitalage.cz",
+  "mobile_no": "+420123456789",
+  "source": "Website",
+  "custom_source_detail": "contact_form",
+  "custom_description": "Ahoj"
+}
+```
+
+Field meaning:
+
+- `first_name` — currently the only mandatory field in the DEV contract.
+- `last_name` — optional surname.
+- `lead_name` — optional explicit display/full-name value.
+- `email` — optional client email.
+- `mobile_no` — optional client mobile number.
+- `source` — should currently be sent as **Website**.
+- `custom_source_detail` — site-level single-line text field for the specific website source/form, e.g. `contact_form`.
+- `custom_description` — site-level multi-line text field for the client's free-text message.
+
+The required-field contract may change before/at production go-live and must be kept in sync with the website integration.
+
+### Validation / creation behavior
+
+Source files:
+
+- `crm/fcrm/doctype/crm_lead/crm_lead.json`
+- `crm/fcrm/doctype/crm_lead/crm_lead.py`
+
+Important behavior:
+
+- `first_name` is mandatory in the committed `CRM Lead` schema.
+- if `status` is omitted on a new Lead, CRM Lead validation assigns **New** when that status exists; otherwise it uses the first open Lead status.
+- `lead_name` is derived from the person's name when the document is validated.
+- email format is validated when `email` is supplied.
+- Lead Owner cannot be the same address as the Lead email.
+- the Lead naming series is generated automatically.
+- normal Frappe DocType permissions apply to the API User.
+
+The standard Frappe resource API returns the created document in the normal REST response under `data`.
+
+### Where to inspect this integration on the site
+
+Because the endpoint is generated automatically by Frappe, its configuration is split between code and site data:
+
+1. **REST route:** standard Frappe `/api/resource/<DocType>` behavior.
+2. **Lead schema:** `crm/fcrm/doctype/crm_lead/crm_lead.json`.
+3. **Lead validation/hooks:** `crm/fcrm/doctype/crm_lead/crm_lead.py`.
+4. **Authentication:** Desk -> User -> integration/admin User -> Settings -> API Access.
+5. **Permissions:** the integration User's Roles & Permissions plus CRM Lead DocType permissions.
+6. **Site-specific fields:** Customize Form / Custom Field records for `custom_source_detail`, `custom_description`, and any other Lead custom fields.
+
+If this integration is changed to a custom whitelisted method or Server Script API in the future, document the exact method name, authentication contract, payload, validation, and response here and add the implementation to source control where possible.
+
+
 # 4. Client case / CRM Deal customizations
 
 ## 4.1 Deal renamed to Client case
