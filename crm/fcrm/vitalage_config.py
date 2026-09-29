@@ -100,6 +100,7 @@ def apply_vitalage_site_config():
 	_apply_custom_docperms()
 	_apply_vitalage_crm_settings(payload)
 	_apply_safe_fcrm_settings()
+	_apply_required_languages()
 	_apply_safe_crm_settings()
 	_apply_safe_erpnext_crm_settings()
 	_apply_notifications()
@@ -303,6 +304,15 @@ def _apply_custom_docperms():
 				**values,
 			}
 		).insert(ignore_permissions=True)
+
+
+def _apply_required_languages():
+	"""Ensure languages required for VitalAge users are selectable."""
+	if not frappe.db.exists("Language", "cs"):
+		frappe.throw(_('Required Language "cs" (Czech) is missing'))
+
+	if frappe.db.get_value("Language", "cs", "enabled") != 1:
+		frappe.db.set_value("Language", "cs", "enabled", 1, update_modified=False)
 
 
 def _apply_safe_crm_settings():
