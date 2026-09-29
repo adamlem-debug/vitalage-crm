@@ -233,6 +233,9 @@ def _apply_safe_crm_settings():
 
 
 def _apply_safe_erpnext_crm_settings():
+	if "erpnext" not in frappe.get_installed_apps():
+		return
+
 	if not frappe.db.exists("DocType", "ERPNext CRM Settings"):
 		return
 
