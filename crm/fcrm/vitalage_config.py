@@ -190,9 +190,7 @@ def _apply_additional_property_setters():
 		frappe.db.set_value("Property Setter", name, values, update_modified=False)
 		return
 
-	frappe.get_doc({"doctype": "Property Setter", "name": name, **values}).insert(
-		ignore_permissions=True
-	)
+	frappe.get_doc({"doctype": "Property Setter", "name": name, **values}).insert(ignore_permissions=True)
 
 
 def _apply_custom_docperms():
@@ -300,9 +298,7 @@ def _ensure_administrator_default_views():
 			},
 		)
 
-		doc = frappe.get_doc("CRM View Settings", name) if name else frappe.new_doc(
-			"CRM View Settings"
-		)
+		doc = frappe.get_doc("CRM View Settings", name) if name else frappe.new_doc("CRM View Settings")
 		doc.label = view.label
 		doc.type = view.type or "list"
 		doc.dt = view.doctype
