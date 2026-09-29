@@ -92,6 +92,7 @@ def apply_vitalage_site_config():
 	"""Bootstrap VitalAge database configuration without business data or secrets."""
 	payload = _load_payload()
 	_install_missing_records(payload)
+	_apply_vitalage_custom_field_overrides()
 	_remove_stock_crm_master_records()
 	_apply_additional_property_setters()
 	_apply_custom_docperms()
@@ -128,6 +129,19 @@ def _install_missing_records(payload):
 			if frappe.db.exists(doctype, name):
 				continue
 			frappe.get_doc(data).insert(ignore_permissions=True)
+
+
+def _apply_vitalage_custom_field_overrides():
+	"""Reconcile targeted Custom Field values that must also update existing sites."""
+	name = "CRM Lead-custom_country"
+	if not frappe.db.exists("Custom Field", name):
+		return
+
+	if not frappe.db.exists("Country", "Czech Republic"):
+		frappe.throw('Required Country master "Czech Republic" is missing')
+
+	if frappe.db.get_value("Custom Field", name, "default") != "Czech Republic":
+		frappe.db.set_value("Custom Field", name, "default", "Czech Republic", update_modified=False)
 
 
 def _remove_stock_crm_master_records():
