@@ -102,7 +102,7 @@ def apply_vitalage_site_config():
 	_apply_safe_crm_settings()
 	_apply_safe_erpnext_crm_settings()
 	_apply_notifications()
-	_ensure_administrator_default_views()
+	_ensure_global_default_views()
 	frappe.clear_cache()
 
 
@@ -367,7 +367,7 @@ def _apply_notifications():
 		doc.insert(ignore_permissions=True)
 
 
-def _ensure_administrator_default_views():
+def _ensure_global_default_views():
 	if not frappe.db.exists("DocType", "CRM View Settings"):
 		return
 
@@ -382,7 +382,7 @@ def _ensure_administrator_default_views():
 				"dt": view.doctype,
 				"type": view.type or "list",
 				"is_standard": 1,
-				"user": "Administrator",
+				"user": "",
 			},
 		)
 
@@ -390,7 +390,8 @@ def _ensure_administrator_default_views():
 		doc.label = view.label
 		doc.type = view.type or "list"
 		doc.dt = view.doctype
-		doc.user = "Administrator"
+		doc.user = ""
+		doc.public = 1
 		doc.route_name = view.route_name or get_route_name(view.doctype)
 		doc.load_default_columns = view.load_default_columns or False
 		doc.filters = json.dumps(view.filters or {})
@@ -410,12 +411,29 @@ def _ensure_administrator_default_views():
 		else:
 			doc.insert(ignore_permissions=True)
 
+		# Keep only one global default per DocType.
 		frappe.db.set_value(
 			"CRM View Settings",
 			{
 				"name": ("!=", doc.name),
+				"user": "",
+				"dt": view.doctype,
+				"is_default": 1,
+			},
+			"is_default",
+			0,
+			update_modified=False,
+		)
+
+		# Earlier versions of the VitalAge bootstrap created these defaults for
+		# Administrator only. They are invisible to normal CRM users, so make sure
+		# they no longer compete as defaults after the global view is installed.
+		frappe.db.set_value(
+			"CRM View Settings",
+			{
 				"user": "Administrator",
 				"dt": view.doctype,
+				"is_standard": 1,
 				"is_default": 1,
 			},
 			"is_default",
