@@ -4,6 +4,7 @@ import zlib
 from importlib import resources
 
 import frappe
+from frappe import _
 
 from crm.fcrm.doctype.crm_view_settings.crm_view_settings import (
 	get_route_name,
@@ -92,15 +93,18 @@ def apply_vitalage_site_config():
 	"""Bootstrap VitalAge database configuration without business data or secrets."""
 	payload = _load_payload()
 	_install_missing_records(payload)
+	_apply_crm_fields_layouts(payload)
+	_apply_vitalage_custom_field_overrides()
 	_remove_stock_crm_master_records()
 	_apply_additional_property_setters()
 	_apply_custom_docperms()
 	_apply_vitalage_crm_settings(payload)
 	_apply_safe_fcrm_settings()
+	_apply_required_languages()
 	_apply_safe_crm_settings()
 	_apply_safe_erpnext_crm_settings()
 	_apply_notifications()
-	_ensure_administrator_default_views()
+	_ensure_global_default_views()
 	frappe.clear_cache()
 
 
@@ -128,6 +132,42 @@ def _install_missing_records(payload):
 			if frappe.db.exists(doctype, name):
 				continue
 			frappe.get_doc(data).insert(ignore_permissions=True)
+
+
+def _apply_crm_fields_layouts(payload):
+	"""Reconcile VitalAge CRM layouts even when stock records already exist."""
+	for source in payload.get("crm_fields_layout", []):
+		name = source.get("name")
+		if not name:
+			continue
+
+		if frappe.db.exists("CRM Fields Layout", name):
+			doc = frappe.get_doc("CRM Fields Layout", name)
+		else:
+			doc = frappe.new_doc("CRM Fields Layout")
+			doc.name = name
+
+		doc.dt = source.get("dt")
+		doc.type = source.get("type")
+		doc.layout = source.get("layout")
+
+		if doc.is_new():
+			doc.insert(ignore_permissions=True)
+		else:
+			doc.save(ignore_permissions=True)
+
+
+def _apply_vitalage_custom_field_overrides():
+	"""Reconcile targeted Custom Field values that must also update existing sites."""
+	name = "CRM Lead-custom_country"
+	if not frappe.db.exists("Custom Field", name):
+		return
+
+	if not frappe.db.exists("Country", "Czech Republic"):
+		frappe.throw(_('Required Country master "Czech Republic" is missing'))
+
+	if frappe.db.get_value("Custom Field", name, "default") != "Czech Republic":
+		frappe.db.set_value("Custom Field", name, "default", "Czech Republic", update_modified=False)
 
 
 def _remove_stock_crm_master_records():
@@ -266,6 +306,15 @@ def _apply_custom_docperms():
 		).insert(ignore_permissions=True)
 
 
+def _apply_required_languages():
+	"""Ensure languages required for VitalAge users are selectable."""
+	if not frappe.db.exists("Language", "cs"):
+		frappe.throw(_('Required Language "cs" (Czech) is missing'))
+
+	if frappe.db.get_value("Language", "cs", "enabled") != 1:
+		frappe.db.set_value("Language", "cs", "enabled", 1, update_modified=False)
+
+
 def _apply_safe_crm_settings():
 	if not frappe.db.exists("DocType", "CRM Settings"):
 		return
@@ -329,7 +378,7 @@ def _apply_notifications():
 		doc.insert(ignore_permissions=True)
 
 
-def _ensure_administrator_default_views():
+def _ensure_global_default_views():
 	if not frappe.db.exists("DocType", "CRM View Settings"):
 		return
 
@@ -344,7 +393,7 @@ def _ensure_administrator_default_views():
 				"dt": view.doctype,
 				"type": view.type or "list",
 				"is_standard": 1,
-				"user": "Administrator",
+				"user": "",
 			},
 		)
 
@@ -352,7 +401,8 @@ def _ensure_administrator_default_views():
 		doc.label = view.label
 		doc.type = view.type or "list"
 		doc.dt = view.doctype
-		doc.user = "Administrator"
+		doc.user = ""
+		doc.public = 1
 		doc.route_name = view.route_name or get_route_name(view.doctype)
 		doc.load_default_columns = view.load_default_columns or False
 		doc.filters = json.dumps(view.filters or {})
@@ -372,12 +422,29 @@ def _ensure_administrator_default_views():
 		else:
 			doc.insert(ignore_permissions=True)
 
+		# Keep only one global default per DocType.
 		frappe.db.set_value(
 			"CRM View Settings",
 			{
 				"name": ("!=", doc.name),
+				"user": "",
+				"dt": view.doctype,
+				"is_default": 1,
+			},
+			"is_default",
+			0,
+			update_modified=False,
+		)
+
+		# Earlier versions of the VitalAge bootstrap created these defaults for
+		# Administrator only. They are invisible to normal CRM users, so make sure
+		# they no longer compete as defaults after the global view is installed.
+		frappe.db.set_value(
+			"CRM View Settings",
+			{
 				"user": "Administrator",
 				"dt": view.doctype,
+				"is_standard": 1,
 				"is_default": 1,
 			},
 			"is_default",
