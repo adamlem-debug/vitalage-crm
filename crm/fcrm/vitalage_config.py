@@ -92,6 +92,7 @@ def apply_vitalage_site_config():
 	"""Bootstrap VitalAge database configuration without business data or secrets."""
 	payload = _load_payload()
 	_install_missing_records(payload)
+	_apply_crm_fields_layouts(payload)
 	_apply_vitalage_custom_field_overrides()
 	_remove_stock_crm_master_records()
 	_apply_additional_property_setters()
@@ -129,6 +130,29 @@ def _install_missing_records(payload):
 			if frappe.db.exists(doctype, name):
 				continue
 			frappe.get_doc(data).insert(ignore_permissions=True)
+
+
+def _apply_crm_fields_layouts(payload):
+	"""Reconcile VitalAge CRM layouts even when stock records already exist."""
+	for source in payload.get("crm_fields_layout", []):
+		name = source.get("name")
+		if not name:
+			continue
+
+		if frappe.db.exists("CRM Fields Layout", name):
+			doc = frappe.get_doc("CRM Fields Layout", name)
+		else:
+			doc = frappe.new_doc("CRM Fields Layout")
+			doc.name = name
+
+		doc.dt = source.get("dt")
+		doc.type = source.get("type")
+		doc.layout = source.get("layout")
+
+		if doc.is_new():
+			doc.insert(ignore_permissions=True)
+		else:
+			doc.save(ignore_permissions=True)
 
 
 def _apply_vitalage_custom_field_overrides():
