@@ -27,6 +27,91 @@ get_site_info = "crm.activation.get_site_info"
 export_python_type_annotations = True
 require_type_annotated_api_methods = True
 
+
+# VitalAge configuration-as-code fixtures.
+# Only records whose DocTypes already exist before after_migrate belong here.
+# Custom DocTypes/fields/scripts/layouts are bootstrapped by vitalage_config.py.
+fixtures = [
+	{
+		"dt": "Role",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"VitalAge Admin Master",
+					"VitalAge Health Coordinator",
+					"VitalAge Nurse",
+					"VitalAge Nutrition Specialist",
+					"VitalAge Physician",
+					"VitalAge User Manager",
+				],
+			],
+		],
+	},
+	{
+		"dt": "Role Profile",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"VitalAge Admin Master",
+					"VitalAge Health Coordinator",
+					"VitalAge Nurse",
+					"VitalAge Nutrition Specialist",
+					"VitalAge Physician",
+				],
+			],
+		],
+	},
+	{
+		"dt": "CRM Deal Status",
+		"filters": [
+			["name", "in", ["Lost", "Inactive", "No Membership", "Couples Plan", "Management", "Monitoring"]],
+		],
+	},
+	{
+		"dt": "CRM Lead Status",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"No Response",
+					"Junk",
+					"Unqualified",
+					"Converted",
+					"Qualified",
+					"Nurture",
+					"Contacted",
+					"New",
+				],
+			],
+		],
+	},
+	{
+		"dt": "CRM Lead Source",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Other",
+					"Social media",
+					"AI or search",
+					"Advertising",
+					"Magazine",
+					"Podcast",
+					"Partner referral",
+					"Client referral",
+					"Website",
+				],
+			],
+		],
+	},
+]
+
 # Includes in <head>
 # ------------------
 
@@ -322,6 +407,7 @@ after_migrate = [
 	"crm.api.whatsapp.add_roles",
 	"crm.install.add_default_scripts",
 	"crm.install.add_web_form_custom_fields",
+	"crm.fcrm.vitalage_config.apply_vitalage_site_config",
 ]
 
 standard_dropdown_items = [

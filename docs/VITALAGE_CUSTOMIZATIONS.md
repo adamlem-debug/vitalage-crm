@@ -4,8 +4,9 @@
 >
 > **Repository:** `adamlem-debug/vitalage-crm`  
 > **Stable branch:** `vitalage-main`  
-> **Current reconciliation branch:** `chore/upstream-fixes-2026-09-24`  
-> **Document baseline:** 2026-09-25  
+> **Development branch:** `vitalage-dev`  
+> **Configuration-as-code baseline:** established 2026-09-29 and maintained continuously  
+> **Document baseline:** 2026-09-29  
 > **Upstream lineage:** forked from Frappe CRM `main` around 2026-07-07 (merge base `ead04d4b95455f1673b477cfb4b4ac017ce3d4e9`).
 
 ## 1. Why this document exists
@@ -16,6 +17,48 @@ VitalAge is not a stock Frappe CRM deployment. It has two customization layers:
 2. **Site-level Frappe customizations** — Custom Fields, Server Scripts, roles, field layouts, view settings, Google Calendar records, and other Frappe Desk configuration stored in the site database. These are **not necessarily present in Git**.
 
 Both layers are production-critical. A future upstream merge must preserve both.
+
+## 1.1 Standing rule for every future customization
+
+Every future CRM change must include an explicit **configuration-as-code decision** before it is promoted from DEV to PROD.
+
+Use this rule:
+
+- If the change is already represented by normal source-controlled app code (Python, Vue/JavaScript, hooks, DocType JSON, patches, tests, etc.), normal Git deployment is sufficient.
+- If the change is created or changed in Desk and is stored in the site database, decide whether PROD must be able to reproduce it on a fresh site.
+- If the answer is yes, capture it in Git using the appropriate mechanism before promotion to PROD:
+  - fixture,
+  - `vitalage_config_payload.json`,
+  - `apply_vitalage_site_config()` / after-migrate bootstrap logic,
+  - patch, or
+  - another explicit source-controlled migration mechanism.
+- If the setting contains credentials, tokens, passwords, OAuth state, mailbox secrets, API secrets, or other environment-specific values, **do not** commit those values. Document the manual/environment-specific setup instead.
+- Business/client data is never part of this configuration migration.
+
+Examples of site-level changes that require this decision include:
+
+- Custom Fields
+- Property Setters
+- Server Scripts
+- CRM Form Scripts
+- custom DocTypes created in Desk
+- Roles, Role Profiles and Custom DocPerm changes
+- CRM Fields Layouts
+- statuses and Lead Sources
+- Notifications
+- default CRM views
+- settings stored in Single DocTypes
+- other configuration records required for VitalAge behavior
+
+### Promotion gate
+
+Before every future `vitalage-dev -> vitalage-main` promotion, ask:
+
+> **Does this change rely on any DEV database configuration that a fresh PROD deployment would not recreate from Git?**
+
+If yes, the migration/config-as-code setup must be extended as part of the same change before PROD deployment.
+
+This decision is now part of the standard VitalAge development workflow, not an optional cleanup step.
 
 ---
 
@@ -668,7 +711,7 @@ This code is upstream-sensitive because changes to Frappe CRM form-controller li
 
 ## 10.1 Task notifications
 
-Production behavior includes Task notifications to the Client case email for selected Task Types, including operational appointment/service types such as:
+Production behavior includes Task notifications to the Client case email for selected Task Types, including:
 
 - Consultation
 - Nutritional consultation
@@ -685,7 +728,31 @@ Known Client-case email synchronization script:
 
 - **CRM Deal - Sync Task Client Email**
 
-These are site-level and must be backed up outside Git.
+The 2026-09-29 broad DEV-vs-clean-PROD audit also identified two VitalAge-specific Notification records that were not included in the original migration export:
+
+1. **Client notification**
+   - Notification DocType: CRM Task
+   - email recipient comes from custom_client_email
+   - sender account: **Vital Age Clinic Admin**
+   - subject: Vital Age Clinic Reminder: {{ doc.title }}
+   - DEV contains a BCC address; BCC/sender credentials are environment-specific/private and are not committed
+
+2. **Consultation Reminder - 7 Days**
+   - Notification DocType: CRM Task
+   - condition applies to Consultation / Nutrition consultation tasks
+   - recipient is the assigned Task user
+   - send_to_all_assignees = 1
+   - sender account: **Vital Age Clinic Admin**
+   - subject: Consultation reminder: {{ doc.title }}
+   - DEV contains a BCC address; the BCC address is not committed
+
+Migration behavior in draft PR #5:
+
+- Notification definitions are part of the VitalAge configuration bootstrap.
+- They are installed only after an Email Account named **Vital Age Clinic Admin** exists on the target site.
+- Email Account passwords, mailbox credentials, BCC addresses, OAuth credentials, and other mail secrets remain environment-specific and are never stored in Git.
+
+A fresh PROD site therefore requires the outbound Email Account to be configured manually before these Notification records can be recreated.
 
 ## 10.2 Care Plan notifications
 
@@ -723,29 +790,62 @@ This field is site-level Custom Field configuration and is not defined in the st
 
 # 12. Roles and permissions
 
-Known VitalAge roles include:
+The 2026-09-29 supplemental role export and broad audit confirmed the exact VitalAge role set:
 
-- VitalAge Master Admin
-- Admin pobočky
-- Lékař
-- Nutriční
-- Sestra
-- Health Coordinator
-- VitalAge Physician
+- **VitalAge Admin Master**
+- **VitalAge Health Coordinator**
+- **VitalAge Nurse**
+- **VitalAge Nutrition Specialist**
+- **VitalAge Physician**
+- **VitalAge User Manager**
 
-These roles and their DocPerm/User Permission setup are site-level data unless explicitly exported.
+Role Profiles:
 
-## 12.1 Repository-level hierarchy permissions
+- **VitalAge Admin Master**
+- **VitalAge Health Coordinator**
+- **VitalAge Nurse**
+- **VitalAge Nutrition Specialist**
+- **VitalAge Physician**
+
+There is no separate VitalAge User Manager Role Profile.
+
+Role Profile membership:
+
+- VitalAge Admin Master -> VitalAge Admin Master, Sales User, Sales Manager, Translator, VitalAge User Manager
+- VitalAge Health Coordinator -> VitalAge Health Coordinator, Sales User
+- VitalAge Nurse -> VitalAge Nurse, Sales User
+- VitalAge Nutrition Specialist -> VitalAge Nutrition Specialist, Sales User
+- VitalAge Physician -> VitalAge Physician, Sales User
+
+## 12.1 Custom DocPerm audit
+
+The initial migration export contained **38 Custom DocPerm** rows, while the broad 2026-09-29 audit found **66 Custom DocPerm rows on DEV versus 0 on clean PROD**.
+
+Important conclusion:
+
+> Filtering only to rows whose role is a VitalAge role is not sufficient to reproduce the effective customized permission model.
+
+When Frappe permissions are customized, companion Custom DocPerm rows for standard roles can form part of the same effective permission matrix. Draft PR #5 therefore no longer uses the earlier incomplete 7-row Custom DocPerm fixture.
+
+The migration bootstrap now applies the effective custom permission snapshot for intentionally customized DocTypes, including:
+
+- VitalAge Physician access to Contact, CRM Lead, CRM Deal, CRM Task and FCRM Note
+- VitalAge User Manager permissions for User, Role, Role Profile, Module Profile and User Type
+- associated standard-role Custom DocPerm rows needed to preserve those customized matrices
+
+ERPNext Item permission rows are intentionally not hard-coded because the CRM ERPNext integration creates them through its own setup logic.
+
+These records contain configuration only; they do not copy User assignments or business/client data.
+
+## 12.2 Repository-level hierarchy permissions
 
 Files:
 
-- `crm/permissions/org_hierarchy.py`
-- `crm/hooks.py`
-- `crm/fcrm/doctype/fcrm_settings/fcrm_settings.json`
+- crm/permissions/org_hierarchy.py
+- crm/hooks.py
+- crm/fcrm/doctype/fcrm_settings/fcrm_settings.json
 
-FCRM Settings includes:
-
-- `enable_sales_hierarchy`
+FCRM Settings includes enable_sales_hierarchy.
 
 When enabled:
 
@@ -756,8 +856,8 @@ When enabled:
 
 Hooks:
 
-- `permission_query_conditions` for CRM Lead and CRM Deal
-- `has_permission` for CRM Lead and CRM Deal
+- permission_query_conditions for CRM Lead and CRM Deal
+- has_permission for CRM Lead and CRM Deal
 
 ---
 
@@ -789,7 +889,30 @@ Upstream changes to view routing/default resolution need regression testing agai
 
 VitalAge currently does not actively use CRM Products operationally; product UI is hidden/not part of normal workflow.
 
-The repository nevertheless retains ERPNext compatibility code because the app supports ERPNext integration.
+However, the 2026-09-29 audit confirmed that the **ERPNext CRM integration itself is enabled on DEV** and is part of required site configuration.
+
+Current DEV settings:
+
+- ERPNext CRM Settings enabled = 1
+- erpnext_company = Vital Age Clinic
+- create_customer_on_status_change = 1
+- deal_status = Monitoring
+- is_erpnext_in_different_site = 0
+- no ERPNext API key/secret is required for this same-site setup
+- ERPNext CRM-related CRM Settings has Frappe CRM data synchronization enabled
+
+Clean PROD had the ERPNext CRM integration disabled before migration work.
+
+When the integration is enabled, CRM's own code creates system-generated records. The broad audit found examples including:
+
+- CRM Product-erpnext_item_code
+- Customer-crm_deal
+- Item-crm_product_code
+- Quotation-crm_deal
+- Quotation-quotation_to-link_filters
+- ERPNext Item permissions for Sales User / Sales Manager
+
+These are **not VitalAge-authored customizations** and should not be copied as bespoke fixtures. Draft PR #5 applies the safe singleton settings and lets the CRM integration recreate these generated records through its own setup logic.
 
 Relevant areas include:
 
@@ -797,9 +920,10 @@ Relevant areas include:
 - Sales Order customer behavior
 - Item/product synchronization
 - product rate lookup
-- ERPNext v15 Item Price compatibility
+- ERPNext compatibility
+- crm/fcrm/doctype/erpnext_crm_settings/erpnext_crm_settings.py
 
-Do not remove these files casually: they are covered by automated tests and may become operationally relevant later, but they are lower priority for manual VitalAge regression testing today.
+Do not remove these files casually: although product UI is not central to VitalAge operations, the ERPNext integration is enabled and its generated configuration is part of a correct site reconstruction.
 
 ---
 
@@ -831,20 +955,37 @@ Forecasting can dynamically modify Deal Quick Entry/Side Panel layouts and Prope
 
 Files:
 
-- `crm/install.py`
-- `crm/patches.txt`
-- `crm/patches/v1_0/add_task_participants_to_quick_entry.py`
+- crm/install.py
+- crm/patches.txt
+- crm/patches/v1_0/add_task_participants_to_quick_entry.py
+- crm/fcrm/vitalage_config.py — VitalAge site-configuration bootstrap introduced in draft PR #5
+- crm/fixtures/role.json
+- crm/fixtures/role_profile.json
+- crm/fixtures/crm_deal_status.json
+- crm/fixtures/crm_lead_status.json
+- crm/fixtures/crm_lead_source.json
 
 Important VitalAge migration behavior:
 
 - Task Participants are inserted into existing CRM Task Quick Entry layouts via patch.
 - Fresh installs include Participants in the default Task Quick Entry.
-- Existing sites are expected to migrate without manually rebuilding that layout.
+- existing sites are expected to migrate without manually rebuilding that layout.
+- crm.fcrm.vitalage_config.apply_vitalage_site_config runs last in after_migrate so stock/upstream setup happens first and VitalAge values are applied afterward.
+- Custom DocTypes, VitalAge Custom Fields, Property Setters, CRM Fields Layouts, CRM Form Scripts and Server Scripts are bootstrapped after migrate to avoid fresh-site fixture-order problems.
+- VitalAge roles/Role Profiles and CRM statuses/sources use filtered fixtures.
+- effective customized permissions are applied post-migrate rather than through the earlier incomplete role-only Custom DocPerm fixture.
+- FCRM Settings are updated only for safe non-secret values.
+- CRM/ERPNext singleton settings are reproduced without credentials.
+- Administrator default views are created/updated without frappe.set_user impersonation:
+  - Leads -> Group by Status
+  - Deals -> Group by Owner
+  - Tasks -> Calendar
+- the bootstrap contains configuration only and must never include DEV Leads, Contacts, Deals, Tasks, Events, Communications, ToDos, passwords, API secrets, OAuth tokens, or other client/business data.
 
 Any schema or Quick Entry customization introduced later should have both:
 
 1. fresh-install behavior;
-2. upgrade patch behavior.
+2. upgrade patch/bootstrap behavior.
 
 ---
 
@@ -941,38 +1082,111 @@ As observed on the VitalAge site on 2026-09-25:
 | Daily notifications at 06:00 | Scheduler Event | — | Daily operational Task notifications |
 | Convert Lead to Customer | API | — | Legacy/custom conversion API; currently disabled |
 
-**Important:** Server Script bodies are site data. Git deployment does not recreate them.
+**Migration update (2026-09-29):** these 11 Server Script bodies remain database-backed Frappe records at runtime, but draft PR #5 carries sanitized definitions in the VitalAge post-migrate bootstrap so a fresh site can recreate them without copying business data.
 
 ---
 
-# 20. Site configuration that must be backed up separately
+# 20. Site configuration / broad migration audit
 
-A repository clone alone is insufficient to recreate VitalAge production.
+## 20.1 2026-09-29 DEV-vs-clean-PROD broad audit
 
-At minimum, preserve/export:
+Before production migration, the same read-only configuration inventory was run on:
 
-- Server Scripts listed above
-- Custom Fields on CRM Lead
-- Custom Fields on CRM Deal
-- Custom Fields on CRM Task
-- Custom Fields on FCRM Note
-- Custom Field(s) on Event
-- Care Plan child DocType/custom fields and permissions
+- DEV: vitalageclinic.frappe.cloud
+- clean PROD: vitalage.frappe.cloud
+
+The audit covered:
+
+- every custom DocType
+- Custom Field
+- Property Setter
+- Custom DocPerm
+- Role / Role Profile
+- Server Script / Client Script
+- CRM Form Script
+- CRM Fields Layout / CRM View Settings
+- CRM Deal / Lead statuses and Lead sources
+- Workflow-related records
+- Notification
+- Assignment Rule
+- Workspace / Dashboard / Number Card
+- Report / Print Format / Web Form
+- Kanban / List View / Calendar View settings
+- Email Template / Custom Translation
+- Webhook
+- User Permission
+- FCRM Settings
+- VitalAge CRM Settings
+- ERPNext CRM Settings
+- ERPNext CRM-related CRM Settings
+
+Both final V3 exports completed with **Audit errors: 0**.
+
+Key findings beyond the original migration export:
+
+- two VitalAge Notifications were missed initially:
+  - Client notification
+  - Consultation Reminder - 7 Days
+- DEV contained 66 Custom DocPerm rows versus 0 on clean PROD; the original migration export contained only 38
+- complete VitalAge User Manager permissions were broader than the first role-only fixture
+- CRM Organization-annual_revenue-permlevel was a real non-system-generated customization missing from the original export
+- CRM data synchronization was enabled on DEV
+- ERPNext CRM Settings were enabled/configured on DEV
+- several DEV-only Custom Fields, Property Setters and Item permissions were confirmed as **system-generated ERPNext CRM integration artifacts**, not VitalAge-authored records
+- some List View Settings differences were ordinary UI/system state and are not migrated as VitalAge configuration
+- no unexpected VitalAge Workflows, Assignment Rules, Web Forms, Print Formats, Email Templates or custom Reports were identified by the broad audit
+
+This audit materially changed draft PR #5 and is the reason the production migration package must not rely solely on the original narrower export.
+
+## 20.2 Reproducible from Git after draft PR #5
+
+The migration package is intended to reproduce:
+
+- VitalAge custom DocTypes
+- VitalAge Custom Fields
+- VitalAge Property Setters, including CRM Organization annual-revenue permlevel
+- effective customized DocPerm configuration
 - VitalAge roles and Role Profiles
-- DocPerm / Custom DocPerm / permission-level configuration
-- CRM Fields Layout records
-- CRM View Settings / default views as appropriate
-- VitalAge-specific Deal statuses
-- Task Type field options and form filtering scripts
+- Server Scripts
+- CRM Form Scripts
+- customized CRM Fields Layouts
+- Deal statuses
+- Lead statuses
+- Lead sources
+- VitalAge CRM Settings
+- selected safe FCRM Settings
+- CRM/ERPNext integration settings without secrets
+- VitalAge Task Notifications once the required Email Account exists
+- clean Administrator default views
+
+## 20.3 Environment-specific configuration still handled separately
+
+A repository clone is intentionally insufficient for secret/environment-specific infrastructure.
+
+Preserve/configure separately:
+
 - Google Calendar records and user mapping
-- Email Accounts and outbound mail configuration
-- scheduled Server Script cron expressions
-- any Property Setters
-- any Client Scripts/CRM Form Scripts added directly on the site
+- Google OAuth credentials/tokens
+- Email Accounts and mailbox credentials
+- Notification BCC addresses
+- outbound mail configuration
+- API keys/secrets
+- exchange-provider access keys
+- production integration-user credentials
+- any other environment-specific secrets
 
-Recommended long-term improvement:
+Business/client data remains explicitly excluded from the migration package:
 
-> Export these site-level objects into fixtures or a dedicated VitalAge app/migration layer so that production can be recreated from source control rather than relying on database-only configuration.
+- Leads
+- Contacts
+- Deals / Client cases
+- CRM Tasks
+- Communications/emails
+- Events
+- ToDos
+- other DEV operational/client records
+
+The configuration-as-code improvement is now partially implemented by draft PR #5. Future site-level changes should be added to the bootstrap/fixtures at the same time they are introduced so DEV and PROD cannot silently drift.
 
 ---
 
