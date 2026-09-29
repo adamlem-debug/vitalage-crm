@@ -4,7 +4,8 @@
 >
 > **Repository:** `adamlem-debug/vitalage-crm`  
 > **Stable branch:** `vitalage-main`  
-> **Current configuration-migration branch:** chore/vitalage-config-fixtures-2026-09-29 (draft PR #5 -> vitalage-dev)  
+> **Development branch:** `vitalage-dev`  
+> **Configuration-as-code baseline:** established 2026-09-29 and maintained continuously  
 > **Document baseline:** 2026-09-29  
 > **Upstream lineage:** forked from Frappe CRM `main` around 2026-07-07 (merge base `ead04d4b95455f1673b477cfb4b4ac017ce3d4e9`).
 
@@ -16,6 +17,48 @@ VitalAge is not a stock Frappe CRM deployment. It has two customization layers:
 2. **Site-level Frappe customizations** — Custom Fields, Server Scripts, roles, field layouts, view settings, Google Calendar records, and other Frappe Desk configuration stored in the site database. These are **not necessarily present in Git**.
 
 Both layers are production-critical. A future upstream merge must preserve both.
+
+## 1.1 Standing rule for every future customization
+
+Every future CRM change must include an explicit **configuration-as-code decision** before it is promoted from DEV to PROD.
+
+Use this rule:
+
+- If the change is already represented by normal source-controlled app code (Python, Vue/JavaScript, hooks, DocType JSON, patches, tests, etc.), normal Git deployment is sufficient.
+- If the change is created or changed in Desk and is stored in the site database, decide whether PROD must be able to reproduce it on a fresh site.
+- If the answer is yes, capture it in Git using the appropriate mechanism before promotion to PROD:
+  - fixture,
+  - `vitalage_config_payload.json`,
+  - `apply_vitalage_site_config()` / after-migrate bootstrap logic,
+  - patch, or
+  - another explicit source-controlled migration mechanism.
+- If the setting contains credentials, tokens, passwords, OAuth state, mailbox secrets, API secrets, or other environment-specific values, **do not** commit those values. Document the manual/environment-specific setup instead.
+- Business/client data is never part of this configuration migration.
+
+Examples of site-level changes that require this decision include:
+
+- Custom Fields
+- Property Setters
+- Server Scripts
+- CRM Form Scripts
+- custom DocTypes created in Desk
+- Roles, Role Profiles and Custom DocPerm changes
+- CRM Fields Layouts
+- statuses and Lead Sources
+- Notifications
+- default CRM views
+- settings stored in Single DocTypes
+- other configuration records required for VitalAge behavior
+
+### Promotion gate
+
+Before every future `vitalage-dev -> vitalage-main` promotion, ask:
+
+> **Does this change rely on any DEV database configuration that a fresh PROD deployment would not recreate from Git?**
+
+If yes, the migration/config-as-code setup must be extended as part of the same change before PROD deployment.
+
+This decision is now part of the standard VitalAge development workflow, not an optional cleanup step.
 
 ---
 
