@@ -63,8 +63,13 @@ def apply_vitalage_site_config():
 	"""Bootstrap VitalAge database configuration without business data or secrets."""
 	payload = _load_payload()
 	_install_missing_records(payload)
+	_apply_additional_property_setters()
+	_apply_custom_docperms()
 	_apply_vitalage_crm_settings(payload)
 	_apply_safe_fcrm_settings()
+	_apply_safe_crm_settings()
+	_apply_safe_erpnext_crm_settings()
+	_apply_notifications()
 	_ensure_administrator_default_views()
 	frappe.clear_cache()
 
@@ -134,6 +139,143 @@ def _apply_safe_fcrm_settings():
 	# Intentionally do not touch access_key or any other credential-bearing field.
 	if changed:
 		settings.save(ignore_permissions=True)
+
+
+CUSTOM_DOCPERM_B64 = "eNrtmlFv0zAQx79Klec+xHvsW8XEE4FqG7wghI7k1lpz7Mp2GQXx3XGSKrAuW5fUmewcb5bjuP71f7672Pf5V7IFjdImi+TNVTa7RBDJPNFKoOu5BoFmloGENWrXzW+/qnvpmot0nmxRlwK/o0gWbJ4YFJjb+oFGKOq+e80t1q3c9VVN97RwAw9Ns/tW8uadHGRezeSaUKIs6lYJ5u4w41bpZiD+aJpuUl62vWbjIJpVaS4PI0vgzYxuIGqjZLOE3/MXMH80zwJfPAucBg78Qa9B8p9guZI9wdOXKs3+grMB4OwEOGvBWQvOzgI/beWU2ePe4U+w743FcvLCD3PpF9EKfuVAZyutbrkD7i/2a1m6f7G7wT9xC2K5xtqz9zN29kqhLQ1C+Hh3+dtqm79XFinFtC5oklK3G3y12Ruec5CDd3eURj7ZjPUANtCPx52xvavWO7KJ+wvgJwJYnwAehzdL/WUsFDOVGvBmv8WxtnfQJxBKWnDrbtFXO51vwOBIpp4GYepPU48Qv0JHzsC5Nj1p1/YIPgP3PspqObQMfbQsLVTeOL5CmH+NSZn1v/uZjnEv81ztpDUUXRjFqNXqTcfEPX5sRpWGL4V4AMqCtGlfx8J0vrcyVez+/wNErwZ8iR/vWcvj00QChQ5HwDQuurtUnjLzeaenLOoSpmFax3sn0nFivCxKLrmxGqwKLDX3eAF2BO3flaURUNOK1sMKlqZUpEXkvrNDbLoleUTKGC7R3PVgbS06jeZiN+Caw7GBz4hTo6YmwQgd8ZWPc1s31c8QC8xHzDTiU5fQkz4veQgcekXlGenXlz8oddQ/"
+
+
+NOTIFICATION_TEMPLATES_B64 = "eNq9VcFqGzEQ/ZVhIZCAGze0EDCOIY17TClJmktsFlka20q00iJpHRzjDyk55QPyCT05/a+O1rv2Ol6nh4YaFtaamTczb/Rmb2aRZglGrehMSdQetPFyKDnz0uioEfEx0xoV2b8mTKpwYrSQubUV7fdsTwP9hOGHI/T7vcjiEC1qjjGd+WmKvegATk6gF51dnEMXmepFZRTTohLJM+dNEvO8jhhDOop909czdxeXSaSGm9I7/Cij0S5TPu+lFzU2jd8yb/M+gL/ldsmSVCH5KIW81uNqjJal08p5v75oRykyF0olkuvKZUSbQrGVoWs0voY/qI4i54Dm8X3qx/nYBPMYh9mNUNC5yGgcdJRbpi6WOmZiEtJFrc90ZniWBNILmDCpK6KW3FGzgQoYR/Q+IR8ydwkCvuDQ2ACYoHNsFMLaaadrBnbxCwTqRruZdkKh4SGLXTwJCYMpH5sErhdPCaS/f8rUJPrlUUnQTPDx4ukBbxfPfPEMHm2yeNZwZ/RDmA1HaIIRg5dHm9GbD5RLbL1KsmSo7bw1etSZzXLyvfQ0wPm83SzO2wNbeHZpIEkLyHFIeCkeZl4qd0idJcznjHmZ4H5AKSk8IKQ822bmS0jNg7BsgkkJfy09U6cjBFKWljwErOkqqT5n9k6Y+zAzh1rEbuo8JvGGClsfC6M3MVMqZs7JkUZ0S0s2uKWbSVh5QlhnhAtMpBZo8w6rVFA2i1ymQWmEcjMLf1FO0MaDaby6DkOJKlyfGmUuEVYh1ijqRmdKbSyI4oCXb4Pydd5ftoS2ru5TQXVH88Z6N1UUuuoKPsAxhLv41zUVWn+9MTb0t3NV7F4TwaO/EvhS2lu6rtV0qecc4b1UfPx+Kh5/6vxIuSGSRxs9gy2IbzfJpXL3aQHCkPajud8KCXSDdEClB2KOIRS+qdpMlbJVslNKN9TdWgkWtpRMrjVB1Pd20Nbgd8Z3qcjA7zZGyfzu2OLryZmrCd/4JoYrvRvndKltAd5s4xTCD4ugitBuFhyGZ7YHcrgsGh23Ms3nsDcvZrXqdW1c5ynnUnZdAVguPQIn0RL+3vzdV9lRdZWd1d27f11jFfr+x/rq/wFiHkXT"
+
+
+CUSTOM_PERMISSION_FIELDS = (
+	"select",
+	"read",
+	"write",
+	"create",
+	"delete",
+	"submit",
+	"cancel",
+	"amend",
+	"mask",
+	"report",
+	"export",
+	"import",
+	"share",
+	"print",
+	"email",
+	"impersonate",
+)
+
+
+def _decode_bundle(encoded):
+	return json.loads(zlib.decompress(base64.b64decode(encoded)).decode("utf-8"))
+
+
+def _apply_additional_property_setters():
+	name = "CRM Organization-annual_revenue-permlevel"
+	values = {
+		"doctype_or_field": "DocField",
+		"doc_type": "CRM Organization",
+		"field_name": "annual_revenue",
+		"property": "permlevel",
+		"property_type": "Int",
+		"value": "1",
+		"is_system_generated": 0,
+	}
+
+	if frappe.db.exists("Property Setter", name):
+		frappe.db.set_value("Property Setter", name, values, update_modified=False)
+		return
+
+	frappe.get_doc({"doctype": "Property Setter", "name": name, **values}).insert(
+		ignore_permissions=True
+	)
+
+
+def _apply_custom_docperms():
+	for source in _decode_bundle(CUSTOM_DOCPERM_B64):
+		filters = {
+			"parent": source["parent"],
+			"role": source["role"],
+			"permlevel": source["permlevel"],
+		}
+		name = frappe.db.exists("Custom DocPerm", filters)
+		values = {
+			"if_owner": source.get("if_owner", 0),
+			**{field: source.get(field, 0) for field in CUSTOM_PERMISSION_FIELDS},
+		}
+
+		if name:
+			frappe.db.set_value("Custom DocPerm", name, values, update_modified=False)
+			continue
+
+		frappe.get_doc(
+			{
+				"doctype": "Custom DocPerm",
+				**filters,
+				**values,
+			}
+		).insert(ignore_permissions=True)
+
+
+def _apply_safe_crm_settings():
+	if not frappe.db.exists("DocType", "CRM Settings"):
+		return
+
+	settings = frappe.get_single("CRM Settings")
+	if settings.get("enable_frappe_crm_data_synchronization") != 1:
+		settings.enable_frappe_crm_data_synchronization = 1
+		settings.save(ignore_permissions=True)
+
+
+def _apply_safe_erpnext_crm_settings():
+	if not frappe.db.exists("DocType", "ERPNext CRM Settings"):
+		return
+
+	settings = frappe.get_single("ERPNext CRM Settings")
+	targets = {
+		"enabled": 1,
+		"erpnext_company": "Vital Age Clinic",
+		"create_customer_on_status_change": 1,
+		"deal_status": "Monitoring",
+	}
+	changed = False
+
+	for fieldname, value in targets.items():
+		if settings.get(fieldname) != value:
+			settings.set(fieldname, value)
+			changed = True
+
+	# Saving intentionally invokes the CRM integration's own validation so its
+	# system-generated fields, quotation filter and Item permissions are created.
+	# API credentials and remote-site secrets are never populated here.
+	if changed:
+		settings.save(ignore_permissions=True)
+
+
+def _apply_notifications():
+	sender = "Vital Age Clinic Admin"
+	if not frappe.db.exists("Email Account", sender):
+		# Email Account credentials are environment-specific. Re-run migrate after
+		# configuring this account on a fresh site to install the notifications.
+		return
+
+	for template in _decode_bundle(NOTIFICATION_TEMPLATES_B64):
+		name = template["name"]
+		if frappe.db.exists("Notification", name):
+			continue
+
+		doc = frappe.new_doc("Notification")
+		for fieldname, value in template.items():
+			if fieldname in {"name", "recipients", "sender"}:
+				continue
+			doc.set(fieldname, value)
+
+		doc.name = name
+		doc.sender = sender
+		for recipient in template.get("recipients", []):
+			doc.append("recipients", recipient)
+		doc.insert(ignore_permissions=True)
 
 
 def _ensure_administrator_default_views():
