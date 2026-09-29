@@ -45,12 +45,6 @@ fixtures = [
 		],
 	},
 	{
-		"dt": "Custom DocPerm",
-		"filters": [
-			["role", "in", ["VitalAge Admin Master", "VitalAge Health Coordinator", "VitalAge Nurse", "VitalAge Nutrition Specialist", "VitalAge Physician", "VitalAge User Manager"]],
-		],
-	},
-	{
 		"dt": "CRM Deal Status",
 		"filters": [
 			["name", "in", ["Lost", "Inactive", "No Membership", "Couples Plan", "Management", "Monitoring"]],
