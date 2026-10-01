@@ -47,6 +47,7 @@ class TestCRMDeal(FrappeTestCase):
 		primary_contacts = [c for c in deal.contacts if c.is_primary == 1]
 		self.assertEqual(len(primary_contacts), 1)
 		self.assertEqual(primary_contacts[0].contact, contact2.name)
+		self.assertEqual(deal.contact, contact2.name)
 
 	def test_set_primary_email_mobile_no(self):
 		"""Test that email and mobile are set from primary contact"""
@@ -180,9 +181,10 @@ class TestCRMDeal(FrappeTestCase):
 		result = remove_contact(deal.name, contact.name)
 		self.assertTrue(result)
 
-		# Verify contact was removed
+		# Verify contact was removed and the mirrored primary contact was cleared
 		deal.reload()
 		self.assertEqual(len(deal.contacts), 0)
+		self.assertFalse(deal.contact)
 
 	def test_set_primary_contact_api(self):
 		"""Test set_primary_contact API function"""
@@ -200,6 +202,7 @@ class TestCRMDeal(FrappeTestCase):
 
 		# Verify primary contact was changed
 		deal.reload()
+		self.assertEqual(deal.contact, contact2.name)
 		for c in deal.contacts:
 			if c.contact == contact2.name:
 				self.assertEqual(c.is_primary, 1)
@@ -363,6 +366,7 @@ class TestCRMDeal(FrappeTestCase):
 
 		deal.reload()
 		self.assertEqual(deal.contacts[0].is_primary, 1)
+		self.assertEqual(deal.contact, contact.name)
 
 
 def create_test_deal(**kwargs):

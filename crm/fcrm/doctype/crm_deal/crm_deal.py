@@ -113,6 +113,7 @@ class CRMDeal(Document):
 
 	def set_primary_contact(self, contact=None):
 		if not self.contacts:
+			self.contact = None
 			return
 
 		if not contact and len(self.contacts) == 1:
@@ -123,6 +124,9 @@ class CRMDeal(Document):
 					d.is_primary = 1
 				else:
 					d.is_primary = 0
+
+		primary_contact = next((d.contact for d in self.contacts if d.is_primary), None)
+		self.contact = primary_contact
 
 	def set_primary_email_mobile_no(self):
 		if not self.contacts:
@@ -277,11 +281,11 @@ class CRMDeal(Document):
 	def default_list_data():
 		columns = [
 			{
-				"label": "Organization",
+				"label": "Contact",
 				"type": "Link",
-				"key": "organization",
-				"options": "CRM Organization",
-				"width": "11rem",
+				"key": "contact",
+				"options": "Contact",
+				"width": "12rem",
 			},
 			{
 				"label": "Annual Revenue",
@@ -324,7 +328,7 @@ class CRMDeal(Document):
 		]
 		rows = [
 			"name",
-			"organization",
+			"contact",
 			"annual_revenue",
 			"status",
 			"email",
