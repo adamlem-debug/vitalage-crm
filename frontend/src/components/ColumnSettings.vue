@@ -199,7 +199,7 @@ const { getFields } = getMeta(props.doctype)
 
 // Standard fields that are useful in the Client Case list even though
 // they are not part of the CRM Deal form layout.
-const DEAL_SYSTEM_LIST_FIELDS = new Set(['_assign', 'modified'])
+const DEAL_SYSTEM_LIST_FIELDS = new Set(['contact', '_assign', 'modified'])
 
 const dataFieldsLayout = createResource({
   url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
