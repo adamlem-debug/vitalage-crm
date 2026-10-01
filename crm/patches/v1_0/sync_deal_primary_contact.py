@@ -3,7 +3,6 @@ from collections import defaultdict
 
 import frappe
 
-
 OLD_DEFAULT_DEAL_COLUMNS = [
 	"organization",
 	"annual_revenue",
