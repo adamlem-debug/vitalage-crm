@@ -29,6 +29,7 @@ crm.patches.v1_0.create_custom_fields_for_product_item_sync
 crm.patches.v1_0.add_task_participants_to_quick_entry
 crm.patches.v1_0.add_forecasting_section_in_quick_entry
 crm.patches.v1_0.set_persona_captured_for_existing_sites
+crm.patches.v1_0.sync_deal_primary_contact
 
 
 [post_fixture_sync]
