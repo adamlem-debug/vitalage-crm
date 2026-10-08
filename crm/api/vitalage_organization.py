@@ -32,6 +32,7 @@ def create_organization(
 		"custom_dic",
 		"no_of_employees",
 		"currency",
+		"exchange_rate",
 		"annual_revenue",
 		"website",
 		"territory",
