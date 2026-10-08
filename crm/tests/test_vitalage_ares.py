@@ -13,6 +13,20 @@ class TestVitalAgeARES(CRMTestCase):
 		self.assertFalse(valid_ico("123"))
 		self.assertFalse(valid_ico("ABCDEFGH"))
 
+
+	@patch("crm.api.vitalage_ares.frappe.db.get_value", return_value="Restricted Org")
+	@patch("crm.api.vitalage_ares.frappe.has_permission")
+	def test_existing_organization_respects_read_permission(self, permission, _db):
+		permission.side_effect = lambda doctype, perm, **kwargs: perm == "create"
+		result = lookup_organization("00177041")
+		self.assertEqual(result, {"status": "existing"})
+
+	@patch("crm.api.vitalage_ares.frappe.db.get_value", return_value="Readable Org")
+	@patch("crm.api.vitalage_ares.frappe.has_permission", return_value=True)
+	def test_existing_organization_can_be_selected(self, _permission, _db):
+		result = lookup_organization("00177041")
+		self.assertEqual(result, {"status": "existing", "organization": "Readable Org"})
+
 	@patch("crm.api.vitalage_ares.frappe.db.get_value", return_value=None)
 	@patch("crm.api.vitalage_ares.frappe.has_permission", return_value=True)
 	def test_invalid_ico_does_not_call_ares(self, _permission, _db):
