@@ -81,7 +81,8 @@ import { useDocument } from '@/data/document'
 import { useDoctypeModal } from '@/composables/doctypeModal'
 import { useTelemetry } from 'frappe-ui/frappe'
 import { call, createResource, FormControl } from 'frappe-ui'
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -114,6 +115,18 @@ function clearAresState() {
   aresAddressDetails.value = null
   existingOrganization.value = null
 }
+
+const lookupAresDebounced = useDebounceFn(() => {
+  if (/^\\d{8}$/.test(organization.doc.custom_ico || '')) lookupAres()
+}, 500)
+
+watch(
+  () => organization.doc.custom_ico,
+  (ico) => {
+    clearAresState()
+    if (/^\\d{8}$/.test(ico || '')) lookupAresDebounced()
+  },
+)
 
 async function lookupAres() {
   aresLoading.value = true
