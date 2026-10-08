@@ -210,37 +210,54 @@ function chooseExistingOrganization() {
 const { document: organization, triggerOnBeforeCreate } =
   useDocument('CRM Organization')
 
+const allowedOrganizationFields = [
+  'organization_name',
+  'custom_ico',
+  'custom_dic',
+  'no_of_employees',
+  'currency',
+  'exchange_rate',
+  'annual_revenue',
+  'website',
+  'territory',
+  'industry',
+  'address',
+  'organization_logo',
+]
+
 async function createOrganization() {
   if (loading.value) return
   loading.value = true
   error.value = null
 
-  if (aresStatus.value === 'existing') {
-    error.value = 'Organizace s tímto IČO již existuje.'
-    loading.value = false
-    return
-  }
-  await triggerOnBeforeCreate?.()
-
-  const doc = await call(
-    'crm.api.vitalage_organization.create_organization',
-    {
-      organization: { ...organization.doc },
+  try {
+    if (aresStatus.value === 'existing') {
+      error.value = 'Organizace s tímto IČO již existuje.'
+      return
+    }
+    await triggerOnBeforeCreate?.()
+    const payload = Object.fromEntries(
+      allowedOrganizationFields
+        .filter((field) => organization.doc[field] !== undefined)
+        .map((field) => [field, organization.doc[field]]),
+    )
+    const doc = await call('crm.api.vitalage_organization.create_organization', {
+      organization: payload,
       address_text: organization.doc.address ? null : aresAddress.value,
       address_details: aresAddressDetails.value,
-    },
-    {
-      onError: (err) => {
-        error.value = err.error?.messages?.[0]
-        loading.value = false
-      },
-    },
-  )
-  loading.value = false
-  if (doc.name) {
-    capture('organization_created')
-    handleOrganizationUpdate(doc)
-    organization.doc = {}
+    })
+    if (doc?.name) {
+      capture('organization_created')
+      handleOrganizationUpdate(doc)
+      organization.doc = {}
+    }
+  } catch (err) {
+    error.value =
+      err?.error?.messages?.[0] ||
+      err?.message ||
+      'Organizaci se nepodařilo vytvořit.'
+  } finally {
+    loading.value = false
   }
 }
 
