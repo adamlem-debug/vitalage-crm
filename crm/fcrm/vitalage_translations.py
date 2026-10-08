@@ -32,9 +32,14 @@ def export_translations_json():
 
 
 def sync_translations():
-	"""Upsert versioned translations without removing unrelated site records."""
+	"""Upsert versioned translations without removing unrelated site records.
+
+	On the source DEV site, set vitalage_preserve_local_translations=1 in
+	site_config.json so a deployment never overwrites translations awaiting export.
+	"""
 	raw = resources.files("crm.fcrm").joinpath("vitalage_translations.json").read_text(encoding="utf-8")
 	data = json.loads(raw)
+	preserve_local = frappe.conf.get("vitalage_preserve_local_translations", False)
 	for row in data:
 		if row.get("language") != "cs" or not row.get("source_text"):
 			continue
@@ -46,7 +51,7 @@ def sync_translations():
 		existing = frappe.db.get_value("Translation", filters, "name")
 		if existing:
 			doc = frappe.get_doc("Translation", existing)
-			if doc.translated_text != row["translated_text"]:
+			if not preserve_local and doc.translated_text != row["translated_text"]:
 				doc.translated_text = row["translated_text"]
 				doc.save(ignore_permissions=True)
 		else:
