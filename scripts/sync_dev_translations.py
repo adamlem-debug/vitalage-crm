@@ -67,10 +67,12 @@ def export():
 	# Preserve records already versioned but missing from DEV, to avoid accidental deletion.
 	current_by_key = {(row["source_text"], row["context"] or ""): row for row in translations}
 	current_by_key.update({key: row for key, row in old_by_key.items() if key not in current_by_key})
-	combined = sorted(current_by_key.values(), key=lambda row: (row["source_text"].casefold(), row.get("context") or ""))
+	combined = sorted(
+		current_by_key.values(), key=lambda row: (row["source_text"].casefold(), row.get("context") or "")
+	)
 	DESTINATION.write_text(json.dumps(combined, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 	print(f"Fetched {len(translations)} Czech translations; versioned {len(combined)} records.")
 
 
 if __name__ == "__main__":
-    export()
+	export()
