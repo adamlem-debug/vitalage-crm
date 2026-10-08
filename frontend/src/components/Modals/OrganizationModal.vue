@@ -241,11 +241,14 @@ async function createOrganization() {
         .filter((field) => organization.doc[field] !== undefined)
         .map((field) => [field, organization.doc[field]]),
     )
-    const doc = await call('crm.api.vitalage_organization.create_organization', {
-      organization: payload,
-      address_text: organization.doc.address ? null : aresAddress.value,
-      address_details: aresAddressDetails.value,
-    })
+    const doc = await call(
+      'crm.api.vitalage_organization.create_organization',
+      {
+        organization: payload,
+        address_text: organization.doc.address ? null : aresAddress.value,
+        address_details: aresAddressDetails.value,
+      },
+    )
     if (doc?.name) {
       capture('organization_created')
       handleOrganizationUpdate(doc)
