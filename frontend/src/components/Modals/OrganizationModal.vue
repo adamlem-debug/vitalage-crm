@@ -29,24 +29,58 @@
           <div>
             <label class="text-sm text-ink-gray-6">{{ __('IČO') }}</label>
             <div class="flex gap-2 mt-1">
-              <FormControl v-model="organization.doc.custom_ico" type="text" placeholder="12345678" maxlength="8" @update:modelValue="clearAresState" />
-              <Button :label="__('ARES')" :loading="aresLoading" :disabled="!organization.doc.custom_ico || aresLoading" @click="lookupAres" />
+              <FormControl
+                v-model="organization.doc.custom_ico"
+                type="text"
+                placeholder="12345678"
+                maxlength="8"
+                @update:modelValue="clearAresState"
+              />
+              <Button
+                :label="__('ARES')"
+                :loading="aresLoading"
+                :disabled="!organization.doc.custom_ico || aresLoading"
+                @click="lookupAres"
+              />
             </div>
           </div>
           <div>
             <label class="text-sm text-ink-gray-6">{{ __('DIČ') }}</label>
-            <FormControl v-model="organization.doc.custom_dic" class="mt-1" type="text" placeholder="CZ12345678" />
+            <FormControl
+              v-model="organization.doc.custom_dic"
+              class="mt-1"
+              type="text"
+              placeholder="CZ12345678"
+            />
           </div>
         </div>
-        <div v-if="aresMessage" class="mb-4 rounded p-3 text-sm bg-surface-gray-2" role="status">
+        <div
+          v-if="aresMessage"
+          class="mb-4 rounded p-3 text-sm bg-surface-gray-2"
+          role="status"
+        >
           {{ aresMessage }}
-          <Button v-if="aresStatus === 'unavailable'" class="ml-2" :label="__('Zkusit znovu')" @click="lookupAres" />
-          <Button v-if="aresStatus === 'existing' && existingOrganization" class="ml-2" :label="__('Vybrat existující')" @click="chooseExistingOrganization" />
+          <Button
+            v-if="aresStatus === 'unavailable'"
+            class="ml-2"
+            :label="__('Zkusit znovu')"
+            @click="lookupAres"
+          />
+          <Button
+            v-if="aresStatus === 'existing' && existingOrganization"
+            class="ml-2"
+            :label="__('Vybrat existující')"
+            @click="chooseExistingOrganization"
+          />
         </div>
         <div v-if="aresAddress !== null" class="mb-4">
-          <label class="text-sm text-ink-gray-6">{{ __('Adresa sídla (ARES)') }}</label>
+          <label class="text-sm text-ink-gray-6">{{
+            __('Adresa sídla (ARES)')
+          }}</label>
           <FormControl v-model="aresAddress" class="mt-1" type="text" />
-          <p class="text-xs text-ink-gray-5 mt-1">{{ __('Při uložení bude adresa vytvořena jako propojený záznam.') }}</p>
+          <p class="text-xs text-ink-gray-5 mt-1">
+            {{ __('Při uložení bude adresa vytvořena jako propojený záznam.') }}
+          </p>
         </div>
         <FieldLayout
           v-if="tabs.data?.length"
@@ -133,28 +167,37 @@ async function lookupAres() {
   clearAresState()
   const requestedIco = organization.doc.custom_ico
   try {
-    const result = await call('crm.api.vitalage_ares.lookup_organization', { ico: requestedIco })
+    const result = await call('crm.api.vitalage_ares.lookup_organization', {
+      ico: requestedIco,
+    })
     if (organization.doc.custom_ico !== requestedIco) return
     aresStatus.value = result.status
     const messages = {
       invalid_ico: 'Neplatné IČO. Zkontrolujte prosím zadané číslo.',
-      not_found: 'Subjekt nebyl nalezen v ARES. Zkontrolujte IČO nebo vyplňte údaje ručně.',
-      unavailable: 'ARES je momentálně nedostupný. Zkuste to prosím znovu nebo vyplňte údaje ručně.',
-      incomplete: 'Údaje z ARES nejsou kompletní. Zkontrolujte a doplňte chybějící informace.',
+      not_found:
+        'Subjekt nebyl nalezen v ARES. Zkontrolujte IČO nebo vyplňte údaje ručně.',
+      unavailable:
+        'ARES je momentálně nedostupný. Zkuste to prosím znovu nebo vyplňte údaje ručně.',
+      incomplete:
+        'Údaje z ARES nejsou kompletní. Zkontrolujte a doplňte chybějící informace.',
       existing: 'Organizace s tímto IČO již existuje.',
       ok: 'Údaje byly načteny z ARES. Před uložením je prosím zkontrolujte.',
     }
     aresMessage.value = messages[result.status] || messages.unavailable
-    if (result.status === 'existing') existingOrganization.value = result.organization
+    if (result.status === 'existing')
+      existingOrganization.value = result.organization
     if (result.data) {
-      organization.doc.organization_name = result.data.organization_name || organization.doc.organization_name
-      organization.doc.custom_dic = result.data.custom_dic || organization.doc.custom_dic
+      organization.doc.organization_name =
+        result.data.organization_name || organization.doc.organization_name
+      organization.doc.custom_dic =
+        result.data.custom_dic || organization.doc.custom_dic
       aresAddress.value = result.data.address_display || ''
       aresAddressDetails.value = result.data.address || null
     }
   } catch {
     aresStatus.value = 'unavailable'
-    aresMessage.value = 'ARES je momentálně nedostupný. Zkuste to prosím znovu nebo vyplňte údaje ručně.'
+    aresMessage.value =
+      'ARES je momentálně nedostupný. Zkuste to prosím znovu nebo vyplňte údaje ručně.'
   } finally {
     aresLoading.value = false
   }
