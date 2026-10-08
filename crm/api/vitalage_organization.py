@@ -7,7 +7,9 @@ from crm.api.vitalage_ares import valid_ico
 
 
 @frappe.whitelist()
-def create_organization(organization: dict | str, address_text: str | None = None, address_details: dict | str | None = None):
+def create_organization(
+	organization: dict | str, address_text: str | None = None, address_details: dict | str | None = None
+):
 	if not frappe.has_permission("CRM Organization", "create"):
 		frappe.throw(_("Not permitted to create Organization"), frappe.PermissionError)
 
