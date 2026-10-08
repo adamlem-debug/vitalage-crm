@@ -30,7 +30,9 @@ def lookup_organization(ico: str):
 
 	existing = frappe.db.get_value("CRM Organization", {"custom_ico": ico}, "name")
 	if existing:
-		return {"status": "existing", "organization": existing}
+		if frappe.has_permission("CRM Organization", "read", doc=existing):
+			return {"status": "existing", "organization": existing}
+		return {"status": "existing"}
 
 	try:
 		response = requests.get(
