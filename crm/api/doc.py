@@ -182,6 +182,12 @@ def get_quick_filters(doctype: str, cached: bool = True):
 	else:
 		fields = [field for field in meta.fields if field.in_standard_filter]
 
+	# VitalAge: the primary-contact quick filter is a text search, not a Link selector.
+	# It must appear before the existing configurable filters.
+	if doctype == "CRM Deal":
+		fields = [field for field in fields if field.get("fieldname") != "contact"]
+		fields.insert(0, {"label": "Contact", "fieldname": "contact", "fieldtype": "Data"})
+
 	# VitalAge: always expose Task Type as a CRM Task quick filter.
 	# Existing sites can have CRM Global Settings that override DocField
 	# in_standard_filter flags, so inject the custom field here as well.
@@ -310,6 +316,23 @@ def get_data(
 	if default_filters:
 		default_filters = frappe.parse_json(default_filters)
 		filters.update(default_filters)
+
+	# Resolve entered contact name to visible Contact IDs before paginating deals.
+	# Filtering Deal.contact directly with LIKE would search opaque document IDs.
+	if doctype == "CRM Deal" and isinstance(filters.get("contact"), list):
+		contact_filter = filters["contact"]
+		if len(contact_filter) == 2 and str(contact_filter[0]).lower() == "like":
+			term = str(contact_filter[1]).strip("%")
+			if term:
+				matches = frappe.get_list(
+					"Contact",
+					filters={"full_name": ["like", "%" + term + "%"]},
+					pluck="name",
+					limit_page_length=0,
+				)
+				filters["contact"] = ["in", matches or ["__vitalage_no_contact_matches__"]]
+			else:
+				filters.pop("contact")
 
 	is_default = True
 	data = []
@@ -605,7 +628,7 @@ def get_records_based_on_order(doctype, rows, filters, page_length, order):
 
 
 @frappe.whitelist()
-def remove_assignments(doctype: str, name: str, assignees: str | list, ignore_permissions: bool = False):
+def remove_assignments(doctype: str, name: str, assignees: str | list):
 	assignees = frappe.parse_json(assignees)
 
 	if not assignees:
@@ -618,7 +641,7 @@ def remove_assignments(doctype: str, name: str, assignees: str | list, ignore_pe
 			todo=None,
 			assign_to=assign_to,
 			status="Cancelled",
-			ignore_permissions=ignore_permissions,
+			ignore_permissions=False,
 		)
 
 

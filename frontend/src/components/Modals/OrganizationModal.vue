@@ -25,6 +25,62 @@
             />
           </div>
         </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          <div>
+            <label class="text-sm text-ink-gray-6">{{ __('IČO') }}</label>
+            <div class="flex gap-2 mt-1">
+              <FormControl
+                v-model="organization.doc.custom_ico"
+                type="text"
+                placeholder="12345678"
+                maxlength="8"
+              />
+              <Button
+                :label="__('ARES')"
+                :loading="aresLoading"
+                :disabled="!organization.doc.custom_ico || aresLoading"
+                @click="lookupAres"
+              />
+            </div>
+          </div>
+          <div>
+            <label class="text-sm text-ink-gray-6">{{ __('DIČ') }}</label>
+            <FormControl
+              v-model="organization.doc.custom_dic"
+              class="mt-1"
+              type="text"
+              placeholder="CZ12345678"
+            />
+          </div>
+        </div>
+        <div
+          v-if="aresMessage"
+          class="mb-4 rounded p-3 text-sm bg-surface-gray-2"
+          role="status"
+        >
+          {{ aresMessage }}
+          <Button
+            v-if="aresStatus === 'unavailable'"
+            class="ml-2"
+            :label="__('Zkusit znovu')"
+            @click="lookupAres"
+          />
+          <Button
+            v-if="aresStatus === 'existing' && existingOrganization"
+            class="ml-2"
+            :label="__('Vybrat existující')"
+            @click="chooseExistingOrganization"
+          />
+        </div>
+        <div v-if="aresAddress !== null" class="mb-4">
+          <label class="text-sm text-ink-gray-6">{{
+            __('Adresa sídla (ARES)')
+          }}</label>
+          <FormControl v-model="aresAddress" class="mt-1" type="text" />
+          <p class="text-xs text-ink-gray-5 mt-1">
+            {{ __('Při uložení bude adresa vytvořena jako propojený záznam.') }}
+          </p>
+        </div>
         <FieldLayout
           v-if="tabs.data?.length"
           :tabs="tabs.data"
@@ -57,8 +113,9 @@ import { showQuickEntryModal, quickEntryProps } from '@/composables/modals'
 import { useDocument } from '@/data/document'
 import { useDoctypeModal } from '@/composables/doctypeModal'
 import { useTelemetry } from 'frappe-ui/frappe'
-import { call, createResource } from 'frappe-ui'
-import { ref, nextTick, onMounted } from 'vue'
+import { call, createResource, FormControl } from 'frappe-ui'
+import { ref, nextTick, onMounted, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -77,36 +134,133 @@ const show = defineModel({ type: Boolean })
 
 const loading = ref(false)
 const error = ref(null)
+const aresLoading = ref(false)
+const aresStatus = ref('')
+const aresMessage = ref('')
+const aresAddress = ref(null)
+const aresAddressDetails = ref(null)
+const existingOrganization = ref(null)
+
+function clearAresState() {
+  aresStatus.value = ''
+  aresMessage.value = ''
+  existingOrganization.value = null
+}
+
+const lookupAresDebounced = useDebounceFn(() => {
+  if (/^\d{8}$/.test(organization.doc.custom_ico || '')) lookupAres()
+}, 500)
+
+watch(
+  () => organization.doc.custom_ico,
+  (ico) => {
+    clearAresState()
+    aresAddressDetails.value = null
+    if (/^\d{8}$/.test(ico || '')) lookupAresDebounced()
+  },
+)
+
+async function lookupAres() {
+  const requestedIco = organization.doc.custom_ico
+  aresLoading.value = true
+  clearAresState()
+  try {
+    const result = await call('crm.api.vitalage_ares.lookup_organization', {
+      ico: requestedIco,
+    })
+    if (organization.doc.custom_ico !== requestedIco) return
+    aresStatus.value = result.status
+    const messages = {
+      invalid_ico: 'Neplatné IČO. Zkontrolujte prosím zadané číslo.',
+      not_found:
+        'Subjekt nebyl nalezen v ARES. Zkontrolujte IČO nebo vyplňte údaje ručně.',
+      unavailable:
+        'ARES je momentálně nedostupný. Zkuste to prosím znovu nebo vyplňte údaje ručně.',
+      incomplete:
+        'Údaje z ARES nejsou kompletní. Zkontrolujte a doplňte chybějící informace.',
+      existing: 'Organizace s tímto IČO již existuje.',
+      ok: 'Údaje byly načteny z ARES. Před uložením je prosím zkontrolujte.',
+    }
+    aresMessage.value = messages[result.status] || messages.unavailable
+    if (result.status === 'existing')
+      existingOrganization.value = result.organization
+    if (result.data) {
+      organization.doc.organization_name =
+        result.data.organization_name || organization.doc.organization_name
+      organization.doc.custom_dic =
+        result.data.custom_dic || organization.doc.custom_dic
+      aresAddress.value = result.data.address_display || ''
+      aresAddressDetails.value = result.data.address || null
+    }
+  } catch {
+    if (organization.doc.custom_ico !== requestedIco) return
+    aresStatus.value = 'unavailable'
+    aresMessage.value =
+      'ARES je momentálně nedostupný. Zkuste to prosím znovu nebo vyplňte údaje ručně.'
+  } finally {
+    aresLoading.value = false
+  }
+}
+
+function chooseExistingOrganization() {
+  if (!existingOrganization.value) return
+  handleOrganizationUpdate({ name: existingOrganization.value })
+}
 
 const { document: organization, triggerOnBeforeCreate } =
   useDocument('CRM Organization')
 
+const allowedOrganizationFields = [
+  'organization_name',
+  'custom_ico',
+  'custom_dic',
+  'no_of_employees',
+  'currency',
+  'exchange_rate',
+  'annual_revenue',
+  'website',
+  'territory',
+  'industry',
+  'address',
+  'organization_logo',
+]
+
 async function createOrganization() {
+  if (loading.value) return
   loading.value = true
   error.value = null
 
-  await triggerOnBeforeCreate?.()
-
-  const doc = await call(
-    'frappe.client.insert',
-    {
-      doc: {
-        doctype: 'CRM Organization',
-        ...organization.doc,
+  try {
+    if (aresStatus.value === 'existing') {
+      error.value = 'Organizace s tímto IČO již existuje.'
+      return
+    }
+    await triggerOnBeforeCreate?.()
+    const payload = Object.fromEntries(
+      allowedOrganizationFields
+        .filter((field) => organization.doc[field] !== undefined)
+        .map((field) => [field, organization.doc[field]]),
+    )
+    const doc = await call(
+      'crm.api.vitalage_organization.create_organization',
+      {
+        organization: payload,
+        address_text: organization.doc.address ? null : aresAddress.value,
+        address_details: aresAddressDetails.value,
       },
-    },
-    {
-      onError: (err) => {
-        error.value = err.error?.messages?.[0]
-        loading.value = false
-      },
-    },
-  )
-  loading.value = false
-  if (doc.name) {
-    capture('organization_created')
-    handleOrganizationUpdate(doc)
-    organization.doc = {}
+    )
+    if (doc?.name) {
+      capture('organization_created')
+      handleOrganizationUpdate(doc)
+      organization.doc = {}
+    }
+  } catch (err) {
+    error.value =
+      err?.error?.messages?.[0] ||
+      err?.message ||
+      'Organizaci se nepodařilo vytvořit.'
+  } finally {
+    loading.value = false
   }
 }
 

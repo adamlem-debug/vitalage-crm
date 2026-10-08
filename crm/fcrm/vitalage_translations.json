@@ -1,0 +1,476 @@
+[
+  {
+    "language": "cs",
+    "source_text": "Removed from Calendar",
+    "translated_text": "Odebráno z kalendáře",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Ms.",
+    "translated_text": "Paní",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Mr.",
+    "translated_text": "Pan",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Female",
+    "translated_text": "Žena",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Male",
+    "translated_text": "Muž",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Start CGM",
+    "translated_text": "Nasadit CGM",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Send probiotics",
+    "translated_text": "Poslat probiotika",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Send supplements",
+    "translated_text": "Poslat suplementy",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Contact later",
+    "translated_text": "Kontaktovat později",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Schedule sample collection",
+    "translated_text": "Domluvit odběr",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Schedule initial consultation",
+    "translated_text": "Domluvit vstupní konzultaci",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "In person",
+    "translated_text": "Osobně",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Channel",
+    "translated_text": "Kanál",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Source Detail",
+    "translated_text": "Upřesnění kanálu",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Other",
+    "translated_text": "Jiné",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Social media",
+    "translated_text": "Sociální sítě",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "AI or search",
+    "translated_text": "AI nebo vyhledávání",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Advertising",
+    "translated_text": "Reklama",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Magazine",
+    "translated_text": "Časopis",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Partner referral",
+    "translated_text": "Doporučení partnera",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Client referral",
+    "translated_text": "Doporučení klienta",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Website",
+    "translated_text": "Web",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Care Plan",
+    "translated_text": "Plán péče",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Check-ups",
+    "translated_text": "Kontroly",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Medication",
+    "translated_text": "Medikace",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Supplements",
+    "translated_text": "Doplňky stravy",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Nutrition Specialist",
+    "translated_text": "Nutriční specialista",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Other note",
+    "translated_text": "Jiná poznámka",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Nursing note",
+    "translated_text": "Sesterský dekurz",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Nutrition note",
+    "translated_text": "Nutriční dekurz",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Physician note",
+    "translated_text": "Lékařský dekurz",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Concierge Remaining",
+    "translated_text": "Zbývající concierge",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Invoice Paid",
+    "translated_text": "Faktura uhrazena",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Invoice Issued",
+    "translated_text": "Faktura vystavena",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Billing",
+    "translated_text": "Fakturace",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Membership",
+    "translated_text": "Členství",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Extra Concierge Paid",
+    "translated_text": "Uhrazené concierge navíc",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Concierge Used",
+    "translated_text": "Vyčerpané concierge",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Concierge Included",
+    "translated_text": "Concierge v ceně",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Consultations Remaining",
+    "translated_text": "Zbývající konzultace",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Extra Consultations Paid",
+    "translated_text": "Uhrazené konzultace navíc",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Consultations Used",
+    "translated_text": "Vyčerpané konzultace",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Consultations Included",
+    "translated_text": "Konzultace v ceně",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Nutrition",
+    "translated_text": "Nutrice",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Consultations",
+    "translated_text": "Konzultace",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Services",
+    "translated_text": "Služby",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Payment Signal",
+    "translated_text": "Platební signál",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Membership End Date",
+    "translated_text": "Konec členství",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Membership Start Date",
+    "translated_text": "Začátek členství",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Other consultation",
+    "translated_text": "Jiná konzultace",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Administration",
+    "translated_text": "Administrativa",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "External partner coordination",
+    "translated_text": "Domluvení externího partnera",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Therapy",
+    "translated_text": "Terapie",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Sample collection",
+    "translated_text": "Odběr",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Nutrition consultation",
+    "translated_text": "Nutriční konzultace",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Consultation",
+    "translated_text": "Lékářská konzultace",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "🔴 Risk",
+    "translated_text": "🔴 Rizikový",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "🟠 Watch",
+    "translated_text": "🟠 Pozor",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "🟢 Pays on Time",
+    "translated_text": "🟢 Platí včas",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Lost",
+    "translated_text": "Ztracen",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Inactive",
+    "translated_text": "Neaktivní",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Couples Plan",
+    "translated_text": "Párový",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Management",
+    "translated_text": "Management",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Monitoring",
+    "translated_text": "Monitoring",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "No Membership",
+    "translated_text": "Bez členství",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Country",
+    "translated_text": "Země",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Postal code",
+    "translated_text": "PSČ",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "City",
+    "translated_text": "Město",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Street and Number",
+    "translated_text": "Ulice a číslo",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Tax ID",
+    "translated_text": "DIČ",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Company ID",
+    "translated_text": "IČO",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Billing Details",
+    "translated_text": "Fakturační údaje",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "No Response",
+    "translated_text": "Neozývá se",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Unqualified",
+    "translated_text": "Nemá zájem",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Qualified",
+    "translated_text": "Má zájem",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Nurture",
+    "translated_text": "V řešení",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Contacted",
+    "translated_text": "Kontaktován",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Deals",
+    "translated_text": "Klienti",
+    "context": null
+  },
+  {
+    "language": "cs",
+    "source_text": "Deal",
+    "translated_text": "Klient",
+    "context": null
+  }
+]
