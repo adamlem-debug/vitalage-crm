@@ -34,7 +34,6 @@
                 type="text"
                 placeholder="12345678"
                 maxlength="8"
-                @update:modelValue="clearAresState"
               />
               <Button
                 :label="__('ARES')"
@@ -145,8 +144,6 @@ const existingOrganization = ref(null)
 function clearAresState() {
   aresStatus.value = ''
   aresMessage.value = ''
-  aresAddress.value = null
-  aresAddressDetails.value = null
   existingOrganization.value = null
 }
 
@@ -158,14 +155,15 @@ watch(
   () => organization.doc.custom_ico,
   (ico) => {
     clearAresState()
+    aresAddressDetails.value = null
     if (/^\\d{8}$/.test(ico || '')) lookupAresDebounced()
   },
 )
 
 async function lookupAres() {
+  const requestedIco = organization.doc.custom_ico
   aresLoading.value = true
   clearAresState()
-  const requestedIco = organization.doc.custom_ico
   try {
     const result = await call('crm.api.vitalage_ares.lookup_organization', {
       ico: requestedIco,
@@ -195,6 +193,7 @@ async function lookupAres() {
       aresAddressDetails.value = result.data.address || null
     }
   } catch {
+    if (organization.doc.custom_ico !== requestedIco) return
     aresStatus.value = 'unavailable'
     aresMessage.value =
       'ARES je momentálně nedostupný. Zkuste to prosím znovu nebo vyplňte údaje ručně.'
@@ -212,6 +211,7 @@ const { document: organization, triggerOnBeforeCreate } =
   useDocument('CRM Organization')
 
 async function createOrganization() {
+  if (loading.value) return
   loading.value = true
   error.value = null
 
