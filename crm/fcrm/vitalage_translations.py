@@ -50,7 +50,7 @@ def sync_translations():
 				doc.translated_text = row["translated_text"]
 				doc.save(ignore_permissions=True)
 		else:
-			frappe.get_doc({"doctype": "Translation", **filters, "translated_text": row["translated_text"]}).insert(
-				ignore_permissions=True
-			)
+			frappe.get_doc(
+				{"doctype": "Translation", **filters, "translated_text": row["translated_text"]}
+			).insert(ignore_permissions=True)
 	frappe.clear_cache()
