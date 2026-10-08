@@ -13,7 +13,6 @@ class TestVitalAgeARES(CRMTestCase):
 		self.assertFalse(valid_ico("123"))
 		self.assertFalse(valid_ico("ABCDEFGH"))
 
-
 	@patch("crm.api.vitalage_ares.frappe.db.get_value", return_value="Restricted Org")
 	@patch("crm.api.vitalage_ares.frappe.has_permission")
 	def test_existing_organization_respects_read_permission(self, permission, _db):
