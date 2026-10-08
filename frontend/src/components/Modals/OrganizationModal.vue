@@ -148,7 +148,7 @@ function clearAresState() {
 }
 
 const lookupAresDebounced = useDebounceFn(() => {
-  if (/^\\d{8}$/.test(organization.doc.custom_ico || '')) lookupAres()
+  if (/^\d{8}$/.test(organization.doc.custom_ico || '')) lookupAres()
 }, 500)
 
 watch(
@@ -156,7 +156,7 @@ watch(
   (ico) => {
     clearAresState()
     aresAddressDetails.value = null
-    if (/^\\d{8}$/.test(ico || '')) lookupAresDebounced()
+    if (/^\d{8}$/.test(ico || '')) lookupAresDebounced()
   },
 )
 
