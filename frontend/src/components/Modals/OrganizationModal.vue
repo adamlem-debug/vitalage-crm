@@ -104,12 +104,14 @@ const aresLoading = ref(false)
 const aresStatus = ref('')
 const aresMessage = ref('')
 const aresAddress = ref(null)
+const aresAddressDetails = ref(null)
 const existingOrganization = ref(null)
 
 function clearAresState() {
   aresStatus.value = ''
   aresMessage.value = ''
   aresAddress.value = null
+  aresAddressDetails.value = null
   existingOrganization.value = null
 }
 
@@ -135,6 +137,7 @@ async function lookupAres() {
       organization.doc.organization_name = result.data.organization_name || organization.doc.organization_name
       organization.doc.custom_dic = result.data.custom_dic || organization.doc.custom_dic
       aresAddress.value = result.data.address_display || ''
+      aresAddressDetails.value = result.data.address || null
     }
   } catch {
     aresStatus.value = 'unavailable'
@@ -164,12 +167,11 @@ async function createOrganization() {
   await triggerOnBeforeCreate?.()
 
   const doc = await call(
-    'frappe.client.insert',
+    'crm.api.vitalage_organization.create_organization',
     {
-      doc: {
-        doctype: 'CRM Organization',
-        ...organization.doc,
-      },
+      organization: { ...organization.doc },
+      address_text: organization.doc.address ? null : aresAddress.value,
+      address_details: aresAddressDetails.value,
     },
     {
       onError: (err) => {
