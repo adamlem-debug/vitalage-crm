@@ -102,7 +102,7 @@ def apply_vitalage_site_config():
 	_apply_safe_fcrm_settings()
 	_apply_required_languages()
 	from crm.fcrm.vitalage_translations import sync_translations
-	
+
 	sync_translations()
 	_apply_safe_crm_settings()
 	_apply_safe_erpnext_crm_settings()
