@@ -8,6 +8,8 @@
  "engine": "InnoDB",
  "field_order": [
   "organization_name",
+  "custom_ico",
+  "custom_dic",
   "no_of_employees",
   "currency",
   "exchange_rate",
@@ -26,6 +28,18 @@
    "in_standard_filter": 1,
    "label": "Organization Name",
    "unique": 1
+  },
+  {
+   "fieldname": "custom_ico",
+   "fieldtype": "Data",
+   "label": "IČO",
+   "unique": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "custom_dic",
+   "fieldtype": "Data",
+   "label": "DIČ"
   },
   {
    "fieldname": "website",
@@ -81,7 +95,7 @@
    "options": "Address"
   },
   {
-   "description": "The rate used to convert the organization\u2019s currency to your crm's base currency (set in CRM Settings). It is set once when the currency is first added and doesn't change automatically.",
+   "description": "The rate used to convert the organization’s currency to your crm's base currency (set in CRM Settings). It is set once when the currency is first added and doesn't change automatically.",
    "fieldname": "exchange_rate",
    "fieldtype": "Float",
    "label": "Exchange Rate"

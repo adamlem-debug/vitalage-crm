@@ -1,0 +1,52 @@
+name: Sync DEV Czech Translations
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 5 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    # Only the maintained DEV lane may read DEV configuration.
+    if: github.repository == 'adamlem-debug/vitalage-crm'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out DEV branch
+        uses: actions/checkout@v4
+        with:
+          ref: vitalage-dev
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch translations from DEV
+        env:
+          DEV_FRAPPE_URL: ${{ vars.DEV_FRAPPE_URL }}
+          DEV_FRAPPE_API_KEY: ${{ secrets.DEV_FRAPPE_TRANSLATION_API_KEY }}
+          DEV_FRAPPE_API_SECRET: ${{ secrets.DEV_FRAPPE_TRANSLATION_API_SECRET }}
+        run: python scripts/sync_dev_translations.py
+
+      - name: Create review PR when translations change
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/dev-czech-translations
+          base: vitalage-dev
+          add-paths: crm/fcrm/vitalage_translations.json
+          commit-message: "chore(vitalage): sync Czech translations from DEV"
+          title: "chore(vitalage): sync Czech translations from DEV"
+          body: |
+            Automated read-only export of Czech Translation records from the DEV Frappe site.
+            Review changed translations before merging.
+            Merging into vitalage-dev does NOT deploy to PROD automatically;
+            follow the existing DEV testing and dev-to-main release workflow.
+          delete-branch: true
