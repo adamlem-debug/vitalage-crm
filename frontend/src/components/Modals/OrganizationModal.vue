@@ -37,6 +37,7 @@
               />
               <Button
                 :label="__('ARES')"
+                variant="solid"
                 :loading="aresLoading"
                 :disabled="!organization.doc.custom_ico || aresLoading"
                 @click="lookupAres"
@@ -55,19 +56,21 @@
         </div>
         <div
           v-if="aresMessage"
-          class="mb-4 rounded p-3 text-sm bg-surface-gray-2"
+          class="mb-4 rounded p-3 text-sm bg-surface-gray-2 text-ink-gray-9"
           role="status"
         >
           {{ aresMessage }}
           <Button
             v-if="aresStatus === 'unavailable'"
             class="ml-2"
+            variant="solid"
             :label="__('Zkusit znovu')"
             @click="lookupAres"
           />
           <Button
             v-if="aresStatus === 'existing' && existingOrganization"
             class="ml-2"
+            variant="solid"
             :label="__('Vybrat existující')"
             @click="chooseExistingOrganization"
           />
