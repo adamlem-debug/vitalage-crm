@@ -52,7 +52,7 @@ def main():
 		existing = payload.get(group, [])
 		if not existing:
 			raise ValueError(f"Missing baseline for {group}")
-		fields = sorted({key for row in existing for key in row} | {"name", "is_system_generated", filter_field})
+		fields = sorted(({key for row in existing for key in row} | {"name", filter_field}) - {"doctype"})
 		# Frappe's property setter schema has no guaranteed is_system_generated on older sites.
 		if group == "property_setters":
 			fields.remove("is_system_generated") if "is_system_generated" not in existing[0] else None
