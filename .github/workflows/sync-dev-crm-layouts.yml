@@ -3,6 +3,7 @@ name: Sync DEV CRM Field Configuration
 on:
   workflow_dispatch:
   schedule:
+    # Scheduled exports run from the default branch; checkout DEV explicitly.
     - cron: "17 4 * * *"
 
 permissions:
