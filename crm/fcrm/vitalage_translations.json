@@ -445,6 +445,12 @@
   },
   {
     "language": "cs",
+    "source_text": "Task type",
+    "translated_text": "Typ úkolu",
+    "context": null
+  },
+  {
+    "language": "cs",
     "source_text": "Tax ID",
     "translated_text": "DIČ",
     "context": null
