@@ -156,7 +156,18 @@ def _reconcile_crm_field_config(payload):
 		doc = frappe.get_doc("Custom Field", name)
 		if doc.dt != source.get("dt") or doc.fieldname != source.get("fieldname"):
 			frappe.throw(f"Custom Field identity mismatch: {name}")
-		for field in ("label", "description", "options", "default", "reqd", "hidden", "read_only", "in_list_view", "in_standard_filter", "translatable"):
+		for field in (
+			"label",
+			"description",
+			"options",
+			"default",
+			"reqd",
+			"hidden",
+			"read_only",
+			"in_list_view",
+			"in_standard_filter",
+			"translatable",
+		):
 			if field in source:
 				doc.set(field, source[field])
 		doc.save(ignore_permissions=True)
