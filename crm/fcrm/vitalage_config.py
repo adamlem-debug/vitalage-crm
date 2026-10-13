@@ -208,7 +208,6 @@ def _apply_crm_fields_layouts(payload):
 			doc.save(ignore_permissions=True)
 
 
-
 def _sync_task_type_filter_script(payload):
 	"""Update the versioned Task Type filter on existing sites.
 
