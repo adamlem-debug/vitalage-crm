@@ -18,19 +18,27 @@ GROUPS = {
 def fetch_rows(doctype, fields, filter_field):
 	base = os.environ["DEV_FRAPPE_URL"].rstrip("/")
 	parts = urlsplit(base)
-	if parts.scheme != "https" or parts.hostname != "vitalageclinic.frappe.cloud" or parts.path or parts.query or parts.fragment:
+	if (
+		parts.scheme != "https"
+		or parts.hostname != "vitalageclinic.frappe.cloud"
+		or parts.path
+		or parts.query
+		or parts.fragment
+	):
 		raise ValueError("DEV_FRAPPE_URL must be the VitalAge DEV HTTPS origin")
 	token = f'token {os.environ["DEV_FRAPPE_API_KEY"]}:{os.environ["DEV_FRAPPE_API_SECRET"]}'
 	rows = []
 	start = 0
 	while True:
-		query = urlencode({
-			"fields": json.dumps(fields),
-			"filters": json.dumps([[filter_field, "in", list(TARGETS)]]),
-			"limit_start": start,
-			"limit_page_length": 100,
-			"order_by": "name asc",
-		})
+		query = urlencode(
+			{
+				"fields": json.dumps(fields),
+				"filters": json.dumps([[filter_field, "in", list(TARGETS)]]),
+				"limit_start": start,
+				"limit_page_length": 100,
+				"order_by": "name asc",
+			}
+		)
 		request = Request(
 			f"{base}/api/resource/{doctype.replace(' ', '%20')}?{query}",
 			headers={"Authorization": token, "Accept": "application/json"},
