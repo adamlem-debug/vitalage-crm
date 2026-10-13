@@ -30,9 +30,9 @@ jobs:
 
       - name: Fetch translations from DEV
         env:
-          DEV_FRAPPE_URL: ${{ vars.DEV_FRAPPE_URL }}
-          DEV_FRAPPE_API_KEY: ${{ secrets.DEV_FRAPPE_TRANSLATION_API_KEY }}
-          DEV_FRAPPE_API_SECRET: ${{ secrets.DEV_FRAPPE_TRANSLATION_API_SECRET }}
+          DEV_FRAPPE_URL: ${{ secrets.DEV_FRAPPE_URL }}
+          DEV_FRAPPE_API_KEY: ${{ secrets.DEV_FRAPPE_API_KEY }}
+          DEV_FRAPPE_API_SECRET: ${{ secrets.DEV_FRAPPE_API_SECRET }}
         run: python scripts/sync_dev_translations.py
 
       - name: Create review PR when translations change
