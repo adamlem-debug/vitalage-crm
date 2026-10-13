@@ -93,7 +93,11 @@ def apply_vitalage_site_config():
 	"""Bootstrap VitalAge database configuration without business data or secrets."""
 	payload = _load_payload()
 	_install_missing_records(payload)
-	_apply_crm_fields_layouts(payload)
+	if frappe.local.site != "vitalageclinic.frappe.cloud":
+		_reconcile_crm_field_config(payload)
+	# DEV is the authoring source: never overwrite its interactive layout edits.
+	if frappe.local.site != "vitalageclinic.frappe.cloud":
+		_apply_crm_fields_layouts(payload)
 	_apply_vitalage_custom_field_overrides()
 	_remove_stock_crm_master_records()
 	_apply_additional_property_setters()
@@ -135,6 +139,49 @@ def _install_missing_records(payload):
 			if frappe.db.exists(doctype, name):
 				continue
 			frappe.get_doc(data).insert(ignore_permissions=True)
+
+
+def _reconcile_crm_field_config(payload):
+	"""Apply approved DEV field labels/settings to existing PROD metadata.
+
+	Never delete fields or rename fieldnames automatically. Review structural changes
+	in the generated PR before deploying to a populated site.
+	"""
+	for source in payload.get("custom_fields", []):
+		if source.get("is_system_generated"):
+			continue
+		name = source.get("name")
+		if not name or not frappe.db.exists("Custom Field", name):
+			continue
+		doc = frappe.get_doc("Custom Field", name)
+		if doc.dt != source.get("dt") or doc.fieldname != source.get("fieldname"):
+			frappe.throw(f"Custom Field identity mismatch: {name}")
+		for field in (
+			"label",
+			"description",
+			"options",
+			"default",
+			"reqd",
+			"hidden",
+			"read_only",
+			"in_list_view",
+			"in_standard_filter",
+			"translatable",
+		):
+			if field in source:
+				doc.set(field, source[field])
+		doc.save(ignore_permissions=True)
+
+	for source in payload.get("property_setters", []):
+		name = source.get("name")
+		if not name:
+			continue
+		if frappe.db.exists("Property Setter", name):
+			doc = frappe.get_doc("Property Setter", name)
+			for field in ("value", "property_type"):
+				if field in source:
+					doc.set(field, source[field])
+			doc.save(ignore_permissions=True)
 
 
 def _apply_crm_fields_layouts(payload):

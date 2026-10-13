@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 DESTINATION = Path("crm/fcrm/vitalage_translations.json")
-FIELDS = ["language", "source_text", "translated_text", "context"]
+FIELDS = ["name", "language", "source_text", "translated_text", "context"]
 
 
 def export():
@@ -50,15 +50,19 @@ def export():
 		raise ValueError("DEV returned zero translations; refusing to replace versioned data")
 
 	translations = []
-	keys = set()
+	keys = {}
 	for item in all_rows:
-		row = {field: item.get(field) for field in FIELDS}
+		row = {field: item.get(field) for field in FIELDS if field != "name"}
 		if row["language"] != "cs" or not row["source_text"] or not row["translated_text"]:
 			raise ValueError("Incomplete translation record from DEV")
 		key = (row["source_text"], row["context"] or "")
 		if key in keys:
-			raise ValueError("Duplicate translation source/context in DEV")
-		keys.add(key)
+			raise ValueError(
+				f"Duplicate translation source/context in DEV: source={key[0]!r}, "
+				f"context={key[1]!r}, records={keys[key]!r} and {item.get('name')!r}. "
+				"Resolve duplicate Translation records in DEV before synchronizing."
+			)
+		keys[key] = item.get("name")
 		translations.append(row)
 	translations.sort(key=lambda row: (row["source_text"].casefold(), row["context"] or ""))
 
