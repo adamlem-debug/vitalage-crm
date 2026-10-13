@@ -1,4 +1,4 @@
-name: Sync DEV CRM Field Layouts
+name: Sync DEV CRM Field Configuration
 
 on:
   workflow_dispatch:
@@ -35,6 +35,12 @@ jobs:
           DEV_FRAPPE_API_KEY: ${{ secrets.DEV_FRAPPE_API_KEY }}
           DEV_FRAPPE_API_SECRET: ${{ secrets.DEV_FRAPPE_API_SECRET }}
         run: python scripts/sync_dev_crm_layouts.py
+      - name: Export custom fields and property setters from DEV (read only)
+        env:
+          DEV_FRAPPE_URL: ${{ secrets.DEV_FRAPPE_URL }}
+          DEV_FRAPPE_API_KEY: ${{ secrets.DEV_FRAPPE_API_KEY }}
+          DEV_FRAPPE_API_SECRET: ${{ secrets.DEV_FRAPPE_API_SECRET }}
+        run: python scripts/sync_dev_crm_field_config.py
       - name: Open reviewable layout synchronization PR
         uses: peter-evans/create-pull-request@v7
         with:
@@ -42,9 +48,9 @@ jobs:
           base: vitalage-dev
           branch: automation/sync-dev-crm-layouts
           delete-branch: true
-          commit-message: "chore: sync CRM field layouts from DEV"
-          title: "chore: sync CRM field layouts from DEV"
+          commit-message: "chore: sync CRM field configuration from DEV"
+          title: "chore: sync CRM field configuration from DEV"
           body: |
-            Read-only export of CRM Fields Layout from VitalAge DEV.
+            Read-only export of CRM Fields Layout, Custom Field and Property Setter from VitalAge DEV.
             Review before merging. Deployment to PROD requires the normal DEV smoke test and production PR.
           add-paths: crm/fcrm/vitalage_config_payload.json
