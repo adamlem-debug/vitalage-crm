@@ -93,7 +93,9 @@ def apply_vitalage_site_config():
 	"""Bootstrap VitalAge database configuration without business data or secrets."""
 	payload = _load_payload()
 	_install_missing_records(payload)
-	_apply_crm_fields_layouts(payload)
+	# DEV is the authoring source: never overwrite its interactive layout edits.
+	if frappe.local.site != "vitalageclinic.frappe.cloud":
+		_apply_crm_fields_layouts(payload)
 	_apply_vitalage_custom_field_overrides()
 	_remove_stock_crm_master_records()
 	_apply_additional_property_setters()
