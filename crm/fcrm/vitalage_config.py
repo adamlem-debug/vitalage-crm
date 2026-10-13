@@ -98,6 +98,7 @@ def apply_vitalage_site_config():
 	# DEV is the authoring source: never overwrite its interactive layout edits.
 	if frappe.local.site != "vitalageclinic.frappe.cloud":
 		_apply_crm_fields_layouts(payload)
+	_sync_task_type_filter_script(payload)
 	_apply_vitalage_custom_field_overrides()
 	_remove_stock_crm_master_records()
 	_apply_additional_property_setters()
@@ -205,6 +206,25 @@ def _apply_crm_fields_layouts(payload):
 			doc.insert(ignore_permissions=True)
 		else:
 			doc.save(ignore_permissions=True)
+
+
+def _sync_task_type_filter_script(payload):
+	"""Update the versioned Task Type filter on existing sites.
+
+	Unlike initial fixture insertion, this updates the existing CRM Form Script,
+	which is required to fix language-specific filtering after a deployment.
+	"""
+	for source in payload.get("crm_form_scripts", []):
+		if source.get("name") != "Filter Task Types by Reference":
+			continue
+		name = source["name"]
+		if not frappe.db.exists("CRM Form Script", name):
+			continue
+		doc = frappe.get_doc("CRM Form Script", name)
+		if doc.script != source.get("script"):
+			doc.script = source["script"]
+			doc.save(ignore_permissions=True)
+		break
 
 
 def _apply_vitalage_custom_field_overrides():
