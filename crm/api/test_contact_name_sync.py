@@ -1,7 +1,7 @@
 """Tests for synchronizing Contact names to the Deal display title."""
 
 from types import SimpleNamespace
-from unittest.mock import call, patch
+from unittest.mock import patch
 
 from crm.api.contact import on_update
 from crm.tests import CRMTestCase
