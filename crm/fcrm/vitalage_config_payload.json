@@ -4026,7 +4026,7 @@
       "allow_guest": 0,
       "module": null,
       "disabled": 0,
-      "script": "doc.custom_client_full_name = \"\"\r\n\r\nfor contact in doc.contacts:\r\n    if contact.is_primary:\r\n        doc.custom_client_full_name = contact.full_name or \"\"\r\n        break",
+      "script": "doc.custom_client_full_name = \"\"\n\nfor row in doc.contacts:\n    if row.is_primary and row.contact:\n        doc.custom_client_full_name = frappe.db.get_value(\"Contact\", row.contact, \"full_name\") or \"\"\n        break",
       "enable_rate_limit": 0,
       "rate_limit_count": 5,
       "rate_limit_seconds": 86400,
