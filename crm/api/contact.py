@@ -38,8 +38,10 @@ def on_update(doc, method):
 		current = frappe.db.get_value("CRM Deal", row.parent, "custom_client_full_name")
 		if current != (doc.full_name or ""):
 			frappe.db.set_value(
-				"CRM Deal", row.parent,
-				"custom_client_full_name", doc.full_name or "",
+				"CRM Deal",
+				row.parent,
+				"custom_client_full_name",
+				doc.full_name or "",
 			)
 
 
