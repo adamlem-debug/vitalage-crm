@@ -35,3 +35,4 @@ crm.patches.v1_0.sync_deal_primary_contact
 [post_fixture_sync]
 # VitalAge configuration reconciliation that must run after fixtures/customizations are synced
 crm.patches.v1_0.fix_vitalage_country_default
+crm.patches.v1_0.sync_vitalage_deal_client_names
