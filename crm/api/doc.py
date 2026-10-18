@@ -395,6 +395,11 @@ def get_data(
 			visible_columns.append(column)
 		columns = visible_columns
 
+		# The Contact column displays the current primary Contact name, not its Link ID.
+		# Include the title for saved List and Group By views without modifying their layouts.
+		if doctype == "CRM Deal" and "contact" in rows and "custom_client_full_name" not in rows:
+			rows.append("custom_client_full_name")
+
 		# check if rows has group_by_field if not add it
 		if group_by_field and group_by_field not in rows:
 			rows.append(group_by_field)
