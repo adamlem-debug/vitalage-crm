@@ -26,6 +26,23 @@ def update_deals_email_mobile_no(doc):
 			)
 
 
+def on_update(doc, method):
+	"""Refresh cached Deal titles after the Contact name has been saved."""
+	linked_deals = frappe.get_all(
+		"CRM Contacts",
+		filters={"contact": doc.name, "is_primary": 1, "parenttype": "CRM Deal"},
+		fields=["parent"],
+		distinct=True,
+	)
+	for row in linked_deals:
+		current = frappe.db.get_value("CRM Deal", row.parent, "custom_client_full_name")
+		if current != (doc.full_name or ""):
+			frappe.db.set_value(
+				"CRM Deal", row.parent,
+				"custom_client_full_name", doc.full_name or "",
+			)
+
+
 @frappe.whitelist()
 def get_linked_deals(contact: str):
 	"""Get linked deals for a contact"""
