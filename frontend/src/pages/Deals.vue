@@ -414,7 +414,12 @@ function parseRows(rows, columns = []) {
         _rows[row] = getFormattedPercent(row, deal)
       }
 
-      if (row == 'organization') {
+      if (row === 'contact') {
+        _rows[row] = {
+          label: deal.custom_client_full_name || deal.contact || '',
+          value: deal.contact,
+        }
+      } else if (row == 'organization') {
         _rows[row] = {
           label: deal.organization,
           logo: getOrganization(deal.organization)?.organization_logo,
