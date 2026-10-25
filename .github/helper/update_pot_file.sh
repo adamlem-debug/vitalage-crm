@@ -35,4 +35,4 @@ gh auth setup-git
 git push -u origin "${branch_name}"
 
 echo "Creating a PR in our fork..."
-gh pr create --fill --base "${BASE_BRANCH}" --head "${branch_name}" -R "${GITHUB_REPOSITORY}"
+gh pr create --title "chore: update POT file (${isodate})" --body "Automatically regenerated translation template from ${BASE_BRANCH}. Review before merging." --base "${BASE_BRANCH}" --head "${branch_name}" -R "${GITHUB_REPOSITORY}"
