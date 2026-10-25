@@ -1,40 +1,38 @@
 #!/bin/bash
-set -e
-cd ~ || exit
+set -euo pipefail
 
-echo "Setting Up Bench..."
-
+cd ~
+echo "Setting up Bench..."
 pip install frappe-bench
-bench -v init frappe-bench --skip-assets --skip-redis-config-generation --python "$(which python)" --frappe-branch "${BASE_BRANCH}"
-cd ./frappe-bench || exit
+bench -v init frappe-bench --skip-assets --skip-redis-config-generation --python "$(which python)" --frappe-branch version-16
+cd ./frappe-bench
 
-echo "Get FCRM..."
+echo "Getting CRM from the checked-out fork..."
 bench get-app --skip-assets crm "${GITHUB_WORKSPACE}"
 
 echo "Generating POT file..."
 bench generate-pot-file --app crm
 
-cd ./apps/crm || exit
+cd ./apps/crm
+git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+git config user.name "github-actions[bot]"
 
-echo "Configuring git user..."
-git config user.email "developers@erpnext.com"
-git config user.name "frappe-pr-bot"
-
-echo "Setting the correct git remote..."
-# Here, the git remote is a local file path by default. Let's change it to the upstream repo.
-git remote set-url upstream https://github.com/frappe/crm.git
-
-echo "Creating a new branch..."
-isodate=$(date -u +"%Y-%m-%d")
-branch_name="pot_${BASE_BRANCH}_${isodate}"
-git checkout -b "${branch_name}"
-
-echo "Commiting changes..."
 git add crm/locale/main.pot
+if git diff --cached --quiet; then
+  echo "No changes to POT file; nothing to commit."
+  exit 0
+fi
+
+echo "Preparing a branch in our fork..."
+isodate=$(date -u +"%Y-%m-%d")
+branch_name="pot_${BASE_BRANCH}_${isodate}_${GITHUB_RUN_ID}"
+git checkout -b "${branch_name}"
 git commit -m "chore: update POT file"
 
+# The bench get-app checkout may point to a local path. Always push to our fork.
+git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
 gh auth setup-git
-git push -u upstream "${branch_name}"
+git push -u origin "${branch_name}"
 
-echo "Creating a PR..."
-gh pr create --fill --base "${BASE_BRANCH}" --head "${branch_name}" -R frappe/crm
+echo "Creating a PR in our fork..."
+gh pr create --fill --base "${BASE_BRANCH}" --head "${branch_name}" -R "${GITHUB_REPOSITORY}"
