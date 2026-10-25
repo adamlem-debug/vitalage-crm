@@ -30,7 +30,7 @@ git checkout -b "${branch_name}"
 git commit -m "chore: update POT file"
 
 # The bench get-app checkout may point to a local path. Always push to our fork.
-git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
 gh auth setup-git
 git push -u origin "${branch_name}"
 
