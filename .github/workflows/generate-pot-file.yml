@@ -15,26 +15,27 @@ jobs:
         branch: ["vitalage-main"]
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
-        - name: Checkout
-          uses: actions/checkout@v4
-          with:
-            ref: ${{ matrix.branch }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
 
-        - name: Setup Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: "3.12"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-        - name: Setup Node
-          uses: actions/setup-node@v6
-          with:
-            node-version: 24
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
 
-        - name: Run script to update POT file
-          run: |
-            bash ${GITHUB_WORKSPACE}/.github/helper/update_pot_file.sh
-          env:
-            GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-            BASE_BRANCH: ${{ matrix.branch }}
+      - name: Run script to update POT file
+        run: |
+          bash ${GITHUB_WORKSPACE}/.github/helper/update_pot_file.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_BRANCH: ${{ matrix.branch }}
