@@ -69,6 +69,13 @@ jobs:
                   sudo apt install -y libcups2-dev redis-server mariadb-client libmariadb-dev
                   npm install -g yarn
 
+            - name: Configure local MariaDB client
+              run: |
+                  # Bench/Frappe runs its own mariadb CLI commands during site creation.
+                  # The ephemeral CI database does not provide TLS.
+                  printf '[client]\nskip-ssl\n' > "$HOME/.my.cnf"
+                  chmod 600 "$HOME/.my.cnf"
+
             - name: Configure database
               run: |
                   echo "127.0.0.1 test_site" | sudo tee -a /etc/hosts
